@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#16805f"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SKD CPNS"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Simulasi SKD CPNS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: lembar jawaban komputer (LJK) — soal di kiri, lembar bulatan di kanan; tinta "drop-out" hijau, isian pensil grafit */
+:root{
+  --paper:#f4f7f6; --card:#ffffff; --ink:#1b2422; --muted:#5d6966; --line:#d3dcd9;
+  --drop:#16805f; --drop-soft:#e1f1ea; --graphite:#2a2e33; --on-graphite:#ffffff;
+  --good:#2b7a3d; --good-soft:#e3f3e6; --bad:#b93a2e; --bad-soft:#fbe8e5; --warn:#a8660b; --warn-soft:#fbf0dc;
+  --f-ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#111614; --card:#18201d; --ink:#e4ebe8; --muted:#97a5a0; --line:#2b3632;
+  --drop:#4dc39e; --drop-soft:#16302a; --graphite:#dde3e6; --on-graphite:#111614;
+  --good:#74c886; --good-soft:#18301f; --bad:#f08072; --bad-soft:#3a1d19; --warn:#e3a54a; --warn-soft:#33270f; color-scheme:dark}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.55;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:1120px;margin:0 auto;padding-block:20px 48px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--drop);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:9px 16px;font-weight:500}
+.btn:hover{border-color:var(--drop)}
+.btn.primary{background:var(--drop);border-color:var(--drop);color:var(--card)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--card)}
+
+/* HOME */
+.home{display:grid;gap:28px;grid-template-columns:minmax(0,1fr)}
+.masthead{display:grid;gap:10px;padding-block:12px 4px;border-bottom:2px solid var(--drop)}
+.masthead h1{font-size:clamp(28px,4.4vw,42px);font-weight:700;letter-spacing:-.01em}
+.masthead p{margin:0;color:var(--muted);max-width:64ch}
+.formcode{font-family:var(--f-mono);font-size:12px;color:var(--drop);letter-spacing:.06em}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;display:grid;gap:14px;align-content:start;min-width:0}
+.panel h2{font-size:19px}
+.panel p{margin:0;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fmt{width:100%;border-collapse:collapse;font-size:14px}
+.fmt th,.fmt td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+.fmt th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.fmt td.n,.fmt th.n{font-family:var(--f-mono);text-align:right}
+.hist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.hist li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line);padding-block:6px;font-size:14px}
+.hist .sc{font-family:var(--f-mono);font-weight:600;color:var(--drop);white-space:nowrap}
+.keys{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+
+/* TEST */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding-block:12px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.bar .sec{display:grid;gap:2px}
+.bar .sec strong{font-size:16px}
+.timer{font-family:var(--f-mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;padding:4px 12px;border:1.5px solid var(--ink);border-radius:6px}
+.timer.low{color:var(--bad);border-color:var(--bad)}
+.test{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:860px){.test{grid-template-columns:minmax(0,1fr)}}
+.qcard{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px;display:grid;gap:18px;min-width:0}
+.qhead{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.qnum{font-family:var(--f-mono);font-weight:600;font-size:14px;color:var(--drop)}
+.direction{font-size:13px;color:var(--muted);border-left:3px solid var(--drop);padding-left:10px}
+.stem{font-size:17.5px;line-height:1.6;white-space:pre-line}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:14px;align-items:center;text-align:left;width:100%;background:transparent;border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-height:48px}
+.opt>span:nth-child(2){flex:1}
+.opt:hover:not(:disabled){border-color:var(--drop);background:var(--drop-soft)}
+.bub{flex:none;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--drop);color:var(--drop);display:grid;place-items:center;font-family:var(--f-mono);font-size:13px;font-weight:600}
+.opt.sel .bub{background:var(--graphite);border-color:var(--graphite);color:var(--on-graphite)}
+.opt.sel{border-color:var(--graphite)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.right .bub{background:var(--good);border-color:var(--good);color:var(--card)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong .bub{background:var(--bad);border-color:var(--bad);color:var(--card)}
+.opt.mid{border-color:var(--warn);background:var(--warn-soft)}
+.opt.mid .bub{background:var(--warn);border-color:var(--warn);color:var(--card)}
+.opt:disabled{cursor:default}
+.pt{flex:none;font-family:var(--f-mono);font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted);background:var(--card)}
+.pt.p5{color:var(--good);border-color:var(--good)}
+.feedback{border-radius:8px;padding:14px 16px;display:grid;gap:8px;font-size:14px}
+.feedback.ok{background:var(--good-soft)}
+.feedback.no{background:var(--bad-soft)}
+.feedback.mid{background:var(--warn-soft)}
+.feedback.na{background:var(--paper);border:1px solid var(--line)}
+.feedback strong{font-size:15px}
+.why{display:grid;gap:2px}
+.why p{margin:0}
+.why.no .label{color:var(--bad)}
+.why.ok .label{color:var(--good)}
+.others summary{cursor:pointer;font-size:13px;color:var(--muted)}
+.others ul{margin:6px 0 0;padding-left:18px;display:grid;gap:6px}
+.tip{border:1px solid var(--drop);border-left-width:4px;border-radius:6px;padding:12px 14px;display:grid;gap:4px;font-size:14px}
+.tip .label{color:var(--drop)}
+.tip p{margin:0;max-width:72ch}
+.nav{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.flag{border:1px solid var(--line);background:transparent;border-radius:6px;padding:5px 10px;font-size:13px}
+.flag.on{border-color:var(--warn);color:var(--warn)}
+
+/* LJK SHEET */
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 78px);max-height:calc(100vh - 100px);overflow:auto}
+.sheet-head{position:sticky;top:-16px;background:var(--card);padding-top:4px;z-index:1}
+@media (max-width:860px){.sheet{position:static;max-height:none}.cells{grid-template-columns:repeat(10,1fr)}}
+@media (max-width:520px){.cells{grid-template-columns:repeat(8,1fr)}}
+.sheet-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--drop);padding-bottom:8px}
+.sheet-head strong{color:var(--drop);font-size:14px;letter-spacing:.04em}
+.grp{display:grid;gap:6px}
+.cells{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.cell{position:relative;border:1.5px solid var(--drop);background:transparent;color:var(--drop);border-radius:50%;aspect-ratio:1;max-width:100%;font-family:var(--f-mono);font-size:11px;font-weight:600;display:grid;place-items:center;padding:0}
+.cell.ans{background:var(--graphite);border-color:var(--graphite);color:var(--on-graphite)}
+.cell.cur{outline:2px solid var(--drop);outline-offset:2px}
+.cell.ok{background:var(--good);border-color:var(--good);color:var(--card)}
+.cell.mid{background:var(--warn);border-color:var(--warn);color:var(--card)}
+.cell.no{background:var(--bad);border-color:var(--bad);color:var(--card)}
+.cell.flg::after{content:"";position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--drop)}
+.legend i.a{background:var(--graphite);border-color:var(--graphite)}
+.legend i.f{background:var(--warn);border-color:var(--warn)}
+.legend i.g{background:var(--good);border-color:var(--good)}
+.legend i.m{background:var(--warn);border-color:var(--warn)}
+.legend i.r{background:var(--bad);border-color:var(--bad)}
+
+/* RESULT */
+.result{display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
+.score{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:24px}
+@media (max-width:640px){.score{grid-template-columns:1fr}}
+.big{font-family:var(--f-mono);font-size:clamp(52px,9vw,76px);font-weight:600;line-height:1;color:var(--drop);font-variant-numeric:tabular-nums}
+.big small{font-size:.32em;color:var(--muted);font-weight:500}
+.verdict{display:inline-block;margin-top:10px;font-weight:600;font-size:14px;padding:3px 10px;border-radius:999px}
+.verdict.ok{background:var(--good-soft);color:var(--good)}
+.verdict.no{background:var(--bad-soft);color:var(--bad)}
+.bars{display:grid;gap:14px;min-width:0}
+.barrow{display:grid;grid-template-columns:minmax(0,46px) 1fr auto;gap:12px;align-items:center;font-size:14px}
+.barrow b{font-family:var(--f-mono)}
+.track{position:relative;height:12px;background:var(--paper);border:1px solid var(--line);border-radius:999px}
+.fill{height:100%;background:var(--drop);border-radius:999px}
+.fill.no{background:var(--bad)}
+.pg{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.note{font-size:13px;color:var(--muted);margin:0}
+.review{display:grid;gap:8px}
+.review details{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+.review summary{display:flex;gap:12px;align-items:center;cursor:pointer;list-style:none}
+.review summary::-webkit-details-marker{display:none}
+.review .mk{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--card)}
+.review .mk.ok{background:var(--good)}.review .mk.no{background:var(--bad)}.review .mk.na{background:var(--muted)}.review .mk.mid{background:var(--warn)}
+.review .sum{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.review .body{display:grid;gap:8px;padding-top:12px;font-size:14px}
+.tag{font-family:var(--f-mono);font-size:12px}
+.ok-t{color:var(--good)}.no-t{color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 16px;font-weight:500}
+.chip:hover{border-color:var(--drop)}
+.chip.on{background:var(--drop);border-color:var(--drop);color:var(--card)}
+.chips.sm .chip{padding:4px 12px;font-size:13px}
+.topics{display:grid;gap:6px}
+.topic{border-bottom:1px solid var(--line);padding-block:6px}
+.topic summary{display:flex;justify-content:space-between;gap:12px;cursor:pointer;font-weight:500}
+.topic .cnt{color:var(--bad);font-size:13px;flex:none}
+.topic p{margin:6px 0 4px;font-size:14px;color:var(--muted);max-width:72ch}
+@media (pointer:coarse){.keys{display:none}}
+@media (max-width:520px){.hidden-sm{display:none}.stem{font-size:16.5px}.qcard{padding:16px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ================= MATERI SINGKAT ================= */
+const TIPS={
+ 'twk-pancasila':['Pancasila','Rumusan Pancasila tercantum di Pembukaan UUD 1945 alinea ke-4. Lambang sila: 1 bintang, 2 rantai, 3 pohon beringin, 4 kepala banteng, 5 padi dan kapas. Pancasila adalah sumber segala sumber hukum negara (UU 12/2011 Pasal 2).'],
+ 'twk-uud':['Pasal-pasal UUD 1945','Hafalkan pasal yang sering keluar: 1(1) negara kesatuan berbentuk republik, 1(2) kedaulatan rakyat, 1(3) negara hukum, 3(1) MPR mengubah UUD, 27(3) bela negara, 30(1) pertahanan dan keamanan, 33(3) kekayaan alam, 35–36B bendera, bahasa, lambang, lagu, 37(5) bentuk NKRI tidak dapat diubah.'],
+ 'twk-sejarah':['Sejarah kebangsaan','Urutan penting: Budi Utomo 20 Mei 1908, Sumpah Pemuda 28 Oktober 1928, sidang BPUPKI 29 Mei–1 Juni 1945, Piagam Jakarta 22 Juni 1945, Proklamasi 17 Agustus 1945 (Pegangsaan Timur 56), pengesahan UUD oleh PPKI 18 Agustus 1945, RIS 1949–1950, Dekrit Presiden 5 Juli 1959.'],
+ 'twk-hukum':['Tata urutan peraturan','UU 12/2011 Pasal 7: UUD 1945 → Tap MPR → UU/Perppu → PP → Perpres → Perda Provinsi → Perda Kabupaten/Kota. Hafalkan juga nama UU penting: 23/2019 bela negara, 24/2009 bendera-bahasa-lambang-lagu, 20/2023 ASN.'],
+ 'twk-integritas':['Integritas','Pilihan yang benar selalu jujur, sesuai aturan, dan tidak kompromi meski "sekali saja". Gratifikasi yang terkait jabatan ditolak, atau jika telanjur diterima dilaporkan ke KPK paling lambat 30 hari kerja. Pelanggaran dilaporkan lewat saluran resmi, bukan media sosial.'],
+ 'twk-belanegara':['Bela negara','Dasar hukum: Pasal 27(3) dan 30(1) UUD 1945, UU 23/2019. Lima nilai dasar bela negara: cinta tanah air, sadar berbangsa dan bernegara, setia pada Pancasila, rela berkorban, kemampuan awal bela negara.'],
+ 'twk-bahasa':['Bahasa negara','Kata depan "di", "ke", "dari" ditulis terpisah dari kata tempat; awalan "di-" disambung dengan kata kerja. Kalimat efektif tidak boleh pleonasme (para hadirin, naik ke atas) dan subjek tidak didahului kata depan. Gabungan kata: kerja sama, tanggung jawab (terpisah); antarkota, segitiga (serangkai).'],
+ 'twk-asn':['Nilai ASN','Core values ASN BerAKHLAK: Berorientasi Pelayanan, Akuntabel, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif.'],
+ 'tiu-sinonim':['Sinonim','Cari kata yang maknanya paling dekat dalam konteks umum. Kata serapan (niscaya, konklusi, ambigu) sering keluar, jadi perbanyak membaca KBBI.'],
+ 'tiu-antonim':['Antonim','Cari lawan makna yang paling tepat, bukan sekadar kata yang "berbeda". Hati-hati dengan pilihan yang justru sinonim.'],
+ 'tiu-analogi':['Analogi','Rumuskan hubungan pasangan pertama dalam satu kalimat ("X adalah alat yang dipakai Y"), lalu uji kalimat yang sama ke setiap pilihan. Urutannya harus sama.'],
+ 'tiu-silogisme':['Silogisme','Jika P maka Q; tidak Q → tidak P (modus tollens). "Semua A adalah B" + "sebagian C bukan B" → sebagian C bukan A. Jangan menyimpulkan hal yang tidak dinyatakan premis.'],
+ 'tiu-analitis':['Penalaran analitis','Gambar kotak posisi atau garis urutan. Isi dulu syarat yang pasti (ujung kiri, hari Rabu), lalu uji kemungkinan sisanya sampai hanya satu yang memenuhi semua syarat.'],
+ 'tiu-deret':['Deret angka dan huruf','Cek selisih antarsuku dulu. Jika selisihnya juga berpola (3,5,7 atau 1,2,4), lanjutkan pola selisihnya. Jika tidak, cek pola ×2+1 atau deret loncat (suku ganjil dan genap terpisah). Untuk huruf, ubah ke angka: A=1, B=2, …'],
+ 'tiu-hitung':['Hitungan cepat','Ubah semua ke bentuk yang sama (pecahan ↔ desimal ↔ persen). Ingat urutan operasi: akar/pangkat → kali/bagi → tambah/kurang.'],
+ 'tiu-perbandingan':['Perbandingan dan persen','Untuk perbandingan, cari nilai "satu bagian" dulu dari selisih atau jumlah. Persen untung = untung ÷ harga beli × 100%. Diskon bertingkat dihitung bertahap.'],
+ 'tiu-cerita':['Soal cerita','Waktu = jarak ÷ kecepatan. Pekerjaan: hitung "orang-hari" atau kecepatan kerja per hari. Umur: buat persamaan dengan variabel umur sekarang. Rata-rata: jumlah = rata-rata × banyak data.'],
+ 'tkp-pelayanan':['Pelayanan publik','Nilai 5 biasanya: ramah, empati, adil (tidak mendahulukan kerabat), dan tetap mencarikan solusi saat ada kendala. Menyalahkan orang lain atau menyuruh pergi bernilai rendah.'],
+ 'tkp-jejaring':['Jejaring kerja','Nilai tertinggi untuk sikap proaktif membangun hubungan, berkomunikasi, dan menjaga tujuan bersama. Menunggu, menghindar, atau bekerja sendiri bernilai rendah. Kerja sama tetap harus lewat prosedur resmi.'],
+ 'tkp-sosbud':['Sosial budaya','Pilih sikap menghargai perbedaan, beradaptasi, dan berbaur dengan masyarakat. Menjaga jarak atau hanya bergaul dengan kelompok sendiri bernilai rendah.'],
+ 'tkp-tik':['Teknologi informasi','Pilih sikap mau belajar teknologi baru dan memakainya untuk efisiensi, sambil menjaga keamanan data: tidak membagikan kata sandi, tidak mengklik tautan mencurigakan, melapor ke tim TI.'],
+ 'tkp-profesional':['Profesionalisme','Nilai 5: bertanggung jawab, jujur mengakui kesalahan, mengatur prioritas, terbuka terhadap kritik, dan berkomunikasi dengan atasan. Mengeluh, menolak tugas, atau menutupi kesalahan bernilai rendah.'],
+ 'tkp-radikal':['Anti radikalisme','Pilih tindakan yang tidak menyebarkan, mengingatkan dengan dialog, dan melapor lewat jalur resmi. Ikut menyebarkan atau ikut kegiatan bernilai 1. Sekadar menghindar bernilai rendah karena tidak menyelesaikan masalah.']
+};
+
+/* ================= BANK SOAL =================
+   TWK & TIU: a = kunci (5 poin), w = alasan tiap pilihan salah ('' untuk kunci)
+   TKP: sc = nilai tiap pilihan (1–5), w = alasan nilainya */
+const PACKS=[
+{name:'Paket 1',items:[
+ /* ---------- TWK ---------- */
+ {sec:'TWK',t:'twk-pancasila',keep:1,q:'Rumusan Pancasila sebagai dasar negara tercantum dalam Pembukaan UUD 1945 alinea ke-…',
+  opts:['Pertama','Kedua','Ketiga','Keempat','Tidak tercantum dalam Pembukaan'],a:3,
+  w:['Alinea pertama berisi pernyataan bahwa kemerdekaan adalah hak segala bangsa.','Alinea kedua berisi perjuangan pergerakan kemerdekaan yang telah sampai di depan pintu gerbang.','Alinea ketiga berisi pernyataan kemerdekaan "atas berkat rahmat Allah".','','Rumusan Pancasila justru ada di Pembukaan.'],
+  ex:'Alinea keempat memuat tujuan negara dan dasar negara, yaitu rumusan lima sila Pancasila.'},
+ {sec:'TWK',t:'twk-uud',q:'Lembaga negara yang berwenang mengubah dan menetapkan Undang-Undang Dasar adalah …',
+  opts:['DPR','Presiden','MPR','Mahkamah Konstitusi','DPD'],a:2,
+  w:['DPR membentuk undang-undang, bukan UUD.','Presiden tidak berwenang mengubah UUD.','','MK menguji undang-undang terhadap UUD, tidak mengubahnya.','DPD adalah bagian dari MPR, tapi tidak berwenang sendiri.'],
+  ex:'Pasal 3 ayat (1) UUD 1945: MPR berwenang mengubah dan menetapkan UUD.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Semboyan "Bhinneka Tunggal Ika" berasal dari kitab …',
+  opts:['Negarakertagama karya Mpu Prapanca','Sutasoma karya Mpu Tantular','Arjunawiwaha karya Mpu Kanwa','Pararaton','Bharatayudha karya Mpu Sedah dan Mpu Panuluh'],a:1,
+  w:['Negarakertagama berisi riwayat Majapahit, sering tertukar dengan Sutasoma.','','Arjunawiwaha karya era Kerajaan Kahuripan, tidak memuat semboyan ini.','Pararaton adalah kitab sejarah raja-raja Singasari dan Majapahit.','Bharatayudha karya era Kediri, tidak memuat semboyan ini.'],
+  ex:'Semboyan ini dikutip dari Kakawin Sutasoma karya Mpu Tantular (era Majapahit).'},
+ {sec:'TWK',t:'twk-integritas',q:'Seorang pegawai dinas perizinan menerima bingkisan dari pengusaha yang sedang mengurus izin di kantornya. Sikap yang sesuai dengan integritas adalah …',
+  opts:['Menerima karena ia tidak meminta','Menerima asalkan izin tetap diproses sesuai aturan','Menolak, dan jika telanjur diterima melaporkannya ke KPK paling lambat 30 hari kerja','Menerima lalu membagikannya kepada rekan kerja','Mengembalikan bingkisan setelah izin selesai diproses'],a:2,
+  w:['Tidak meminta tidak membuat gratifikasi menjadi boleh.','Pemberian terkait jabatan tetap gratifikasi, apa pun hasil prosesnya.','','Membagikan tidak menghapus pelanggaran.','Menunda pengembalian sampai urusan selesai justru memperkuat kesan imbal balik.'],
+  ex:'Pemberian terkait jabatan adalah gratifikasi. Wajib ditolak, atau dilaporkan ke KPK paling lambat 30 hari kerja sejak diterima (UU 20/2001 Pasal 12C).'},
+ {sec:'TWK',t:'twk-sejarah',q:'Berdirinya Budi Utomo pada 20 Mei 1908 diperingati sebagai …',
+  opts:['Hari Pendidikan Nasional','Hari Sumpah Pemuda','Hari Kebangkitan Nasional','Hari Pahlawan','Hari Lahir Pancasila'],a:2,
+  w:['Hari Pendidikan Nasional jatuh pada 2 Mei (lahirnya Ki Hajar Dewantara).','Sumpah Pemuda pada 28 Oktober.','','Hari Pahlawan pada 10 November.','Hari Lahir Pancasila pada 1 Juni.'],
+  ex:'Budi Utomo dianggap awal pergerakan nasional modern, sehingga 20 Mei diperingati sebagai Hari Kebangkitan Nasional.'},
+ {sec:'TWK',t:'twk-belanegara',q:'"Setiap warga negara berhak dan wajib ikut serta dalam upaya pembelaan negara." Bunyi ini terdapat dalam UUD 1945 …',
+  opts:['Pasal 27 ayat (1)','Pasal 27 ayat (3)','Pasal 28','Pasal 30 ayat (1)','Pasal 31 ayat (1)'],a:1,
+  w:['Pasal 27(1) mengatur kesamaan kedudukan di dalam hukum dan pemerintahan.','','Pasal 28 mengatur kemerdekaan berserikat dan berkumpul.','Mirip, tapi Pasal 30(1) menyebut "usaha pertahanan dan keamanan negara".','Pasal 31(1) mengatur hak mendapat pendidikan.'],
+  ex:'Pasal 27 ayat (3) menyebut "upaya pembelaan negara". Bedakan dengan Pasal 30 ayat (1) tentang "usaha pertahanan dan keamanan negara".'},
+ {sec:'TWK',t:'twk-bahasa',q:'Kalimat yang penulisan kata depan dan imbuhannya tepat adalah …',
+  opts:['Ia pergi kesekolah pagi ini.','Surat itu di kirim kemarin.','Rapat diadakan di aula kantor.','Dia tinggal disamping masjid.','Kami berangkat darijakarta pukul tujuh.'],a:2,
+  w:['"Ke" kata depan, harus dipisah: ke sekolah.','"Di-" pada kata kerja pasif harus disambung: dikirim.','','"Di" kata depan tempat harus dipisah: di samping.','"Dari" kata depan, harus dipisah: dari Jakarta.'],
+  ex:'"Diadakan" (awalan, disambung) dan "di aula" (kata depan tempat, dipisah) sama-sama tepat.'},
+ {sec:'TWK',t:'twk-uud',q:'Ketentuan bahwa khusus mengenai bentuk Negara Kesatuan Republik Indonesia tidak dapat dilakukan perubahan terdapat dalam UUD 1945 …',
+  opts:['Pasal 1 ayat (1)','Pasal 1 ayat (3)','Pasal 18','Pasal 36','Pasal 37 ayat (5)'],a:4,
+  w:['Pasal 1(1) menyatakan bentuk negara kesatuan berbentuk republik, tapi bukan larangan perubahannya.','Pasal 1(3) menyatakan Indonesia negara hukum.','Pasal 18 mengatur pemerintahan daerah.','Pasal 36 mengatur bahasa negara.',''],
+  ex:'Pasal 37 mengatur tata cara perubahan UUD, dan ayat (5) mengecualikan bentuk NKRI.'},
+ /* ---------- TIU ---------- */
+ {sec:'TIU',t:'tiu-sinonim',q:'NISCAYA = …',opts:['Mungkin','Pasti','Harapan','Ragu','Segera'],a:1,
+  w:['"Mungkin" justru tidak pasti.','','Tidak berhubungan.','Kebalikan maknanya.','"Segera" berkaitan dengan waktu.'],
+  ex:'Niscaya berarti tentu, pasti.'},
+ {sec:'TIU',t:'tiu-antonim',q:'EKSPLISIT >< …',opts:['Tersurat','Jelas','Tersirat','Terang','Nyata'],a:2,
+  w:['Tersurat adalah sinonim eksplisit.','Jelas adalah sinonim.','','Terang adalah sinonim.','Nyata adalah sinonim.'],
+  ex:'Eksplisit = gamblang, tersurat. Lawannya implisit = tersirat.'},
+ {sec:'TIU',t:'tiu-analogi',q:'AIR : HAUS = … : …',opts:['Minum : Gelas','Makanan : Lapar','Nasi : Piring','Tidur : Kasur','Obat : Dokter'],a:1,
+  w:['Hubungan kegiatan dan wadah.','','Hubungan benda dan wadahnya.','Hubungan kegiatan dan tempat.','Hubungan benda dan pemberinya.'],
+  ex:'Air menghilangkan haus, makanan menghilangkan lapar.'},
+ {sec:'TIU',t:'tiu-silogisme',q:'Jika hujan turun, jalan menjadi basah.\nHari ini jalan tidak basah.\nKesimpulan yang tepat adalah …',
+  opts:['Hari ini hujan turun','Hari ini hujan tidak turun','Jalan kering karena cuaca panas','Mungkin hari ini hujan','Tidak dapat disimpulkan'],a:1,
+  w:['Bertentangan dengan premis.','','Penyebab "panas" tidak ada di premis.','Premis memberi kesimpulan pasti.','Modus tollens memberi kesimpulan pasti.'],
+  ex:'Jika P maka Q; tidak Q, maka tidak P (modus tollens).'},
+ {sec:'TIU',t:'tiu-analitis',q:'Lima orang (A, B, C, D, E) duduk berderet. A di ujung kiri, C tepat di sebelah kanan A, D di ujung kanan, dan E tidak bersebelahan dengan C. Siapa yang duduk di tengah?',
+  opts:['A','B','C','D','E'],a:1,
+  w:['A di ujung kiri.','','C di posisi 2.','D di ujung kanan.','E di posisi 3 akan bersebelahan dengan C.'],
+  ex:'A=1, C=2, D=5. B dan E mengisi posisi 3 dan 4. E tidak boleh di 3 (sebelah C), jadi E=4 dan B=3.'},
+ {sec:'TIU',t:'tiu-deret',q:'3, 6, 11, 18, 27, …',opts:['36','37','38','39','40'],a:2,
+  w:['Selisih terakhir dianggap +9, padahal pola selisih naik 2.','Salah menghitung selisih.','','Salah menghitung selisih.','Salah menghitung selisih.'],
+  ex:'Selisihnya +3, +5, +7, +9, jadi berikutnya +11 → 38.'},
+ {sec:'TIU',t:'tiu-deret',q:'A, C, F, J, O, …',opts:['S','T','U','V','W'],a:2,
+  w:['Hanya +4.','Hanya +5.','','Lompatannya terlalu besar.','Lompatannya terlalu besar.'],
+  ex:'A=1, C=3, F=6, J=10, O=15. Selisih +2, +3, +4, +5, berikutnya +6 → 21 = U.'},
+ {sec:'TIU',t:'tiu-hitung',q:'25% × 480 + 0,15 × 200 = …',opts:['130','140','150','160','170'],a:2,
+  w:['Salah hitung.','Salah hitung.','','Salah hitung.','Salah hitung.'],
+  ex:'25% × 480 = 120 dan 0,15 × 200 = 30. Jumlahnya 150.'},
+ {sec:'TIU',t:'tiu-perbandingan',q:'Perbandingan uang Ani dan Budi 3 : 5. Selisih uang mereka Rp60.000. Jumlah uang mereka berdua adalah …',
+  opts:['Rp180.000','Rp200.000','Rp240.000','Rp300.000','Rp480.000'],a:2,
+  w:['Itu 3 bagian × Rp60.000, salah menentukan nilai satu bagian.','Salah hitung.','','Itu 5 bagian × Rp60.000.','Itu 8 bagian × Rp60.000. Selisih Rp60.000 adalah 2 bagian, bukan 1.'],
+  ex:'Selisih 5 − 3 = 2 bagian = Rp60.000, jadi 1 bagian = Rp30.000. Jumlah 8 bagian = Rp240.000.'},
+ {sec:'TIU',t:'tiu-cerita',q:'Sebuah mobil berangkat pukul 07.30 dengan kecepatan rata-rata 60 km/jam untuk menempuh jarak 150 km. Mobil tiba pukul …',
+  opts:['09.30','09.45','10.00','10.15','10.30'],a:2,
+  w:['Itu 2 jam perjalanan.','Itu 2 jam 15 menit.','','Itu 2 jam 45 menit.','Itu 3 jam.'],
+  ex:'Waktu = 150 ÷ 60 = 2,5 jam. 07.30 + 2 jam 30 menit = 10.00.'},
+ /* ---------- TKP ---------- */
+ {sec:'TKP',t:'tkp-pelayanan',q:'Antrean di loket Anda memanjang karena sistem sedang gangguan, dan seorang warga mulai marah. Sikap Anda …',
+  opts:['Meminta warga bersabar karena gangguan bukan kesalahan saya','Memanggil petugas keamanan agar warga tenang','Menjelaskan bahwa sistem sedang gangguan dan meminta warga menunggu','Meminta maaf, menjelaskan kendala, dan menawarkan alternatif seperti mencatat berkas secara manual agar warga tetap terlayani','Melaporkan gangguan ke bagian TI dan meminta warga menunggu sampai pulih'],
+  sc:[2,1,3,5,4],
+  w:['Melempar tanggung jawab dan tidak memberi solusi.','Menganggap warga sebagai ancaman, bukan orang yang dilayani.','Informatif, tapi pasif.','Empati, transparan, dan tetap mencarikan jalan keluar.','Ada tindakan, tapi warga tetap harus menunggu tanpa kepastian.'],
+  ex:'Pelayanan terbaik menggabungkan empati (minta maaf), keterbukaan (jelaskan kendala), dan solusi (alternatif layanan).'},
+ {sec:'TKP',t:'tkp-pelayanan',q:'Saudara Anda datang ke kantor dan meminta didahulukan, padahal antrean sedang panjang. Sikap Anda …',
+  opts:['Mendahulukannya jika antrean tidak terlalu panjang','Mempersilakannya mengambil nomor antrean dan menjelaskan dengan sopan bahwa semua warga dilayani sesuai urutan','Mendahulukannya karena keluarga','Menyarankannya datang lagi saat kantor sepi','Membantunya menyiapkan berkas agar prosesnya cepat, tetapi tetap antre'],
+  sc:[2,5,1,3,4],
+  w:['Tetap ada perlakuan istimewa.','Adil kepada semua warga dan tetap ramah kepada saudara.','Nepotisme dan tidak adil bagi warga lain.','Tidak curang, tapi menunda pelayanan.','Adil, meski bantuan khusus itu sedikit memberi keistimewaan.'],
+  ex:'Prinsip pelayanan publik: tidak diskriminatif. Saudara tetap antre, disampaikan dengan sopan.'},
+ {sec:'TKP',t:'tkp-jejaring',q:'Anda ditugaskan dalam tim lintas bidang bersama rekan yang belum Anda kenal. Sikap Anda …',
+  opts:['Mengerjakan bagian saya sendiri saja','Menunggu arahan ketua tim','Meminta dipindahkan ke tim yang anggotanya sudah saya kenal','Aktif berkenalan dengan anggota tim','Berkenalan, menyamakan tujuan, membagi peran sesuai keahlian, dan menjaga komunikasi rutin'],
+  sc:[2,3,1,4,5],
+  w:['Bekerja terpisah melemahkan tim.','Pasif.','Menghindari tugas.','Baik, tapi belum sampai ke kerja sama.','Proaktif membangun hubungan sekaligus kerja sama yang terarah.'],
+  ex:'Jejaring kerja dinilai dari inisiatif membangun hubungan dan mengarahkannya ke tujuan bersama.'},
+ {sec:'TKP',t:'tkp-jejaring',q:'Rekan dari instansi lain meminta data internal yang bukan wewenang Anda untuk dibagikan. Sikap Anda …',
+  opts:['Memberikannya langsung demi menjaga hubungan baik','Menolak dengan tegas','Mengarahkan permintaan melalui prosedur resmi dan membantu menghubungkannya dengan pejabat yang berwenang','Menanyakan kepada atasan apakah data itu boleh dibagikan','Memintanya mencari data dari sumber lain'],
+  sc:[1,2,5,4,3],
+  w:['Melanggar kewenangan dan keamanan data.','Benar secara aturan, tapi merusak hubungan dan tidak membantu.','Taat prosedur sekaligus menjaga jejaring.','Taat aturan, tapi masih menunggu.','Tidak melanggar, tapi kurang membantu.'],
+  ex:'Hubungan antarinstansi tetap dijaga, tapi lewat jalur resmi dan pejabat yang berwenang.'},
+ {sec:'TKP',t:'tkp-sosbud',q:'Anda ditempatkan di daerah yang adat dan budayanya sangat berbeda dengan daerah asal Anda. Sikap Anda …',
+  opts:['Bergaul hanya dengan sesama pendatang','Menjaga jarak agar tetap netral','Mengikuti kegiatan warga jika diundang','Mempelajari bahasa daerah sedikit demi sedikit','Mempelajari adat setempat, berbaur dengan warga, dan menyesuaikan diri sambil tetap profesional'],
+  sc:[1,2,3,4,5],
+  w:['Eksklusif dan menghambat pelayanan.','Menghindar, bukan beradaptasi.','Mau berbaur, tapi menunggu diundang.','Inisiatif bagus, tapi terbatas pada bahasa.','Adaptasi menyeluruh dan proaktif.'],
+  ex:'Sosial budaya menilai kemampuan beradaptasi dan menghargai keberagaman secara aktif.'},
+ {sec:'TKP',t:'tkp-sosbud',q:'Dalam rapat, seorang rekan melontarkan candaan tentang suku rekan lain yang hadir. Sikap Anda …',
+  opts:['Ikut tertawa agar suasana cair','Diam saja','Mengingatkan dengan sopan bahwa candaan itu bisa menyinggung, lalu mengembalikan rapat ke topik','Menegur keras di depan semua peserta','Setelah rapat, menyampaikan keberatan kepada rekan yang bercanda secara pribadi'],
+  sc:[1,2,5,3,4],
+  w:['Ikut membenarkan candaan SARA.','Membiarkan.','Tegas, menghormati semua pihak, dan rapat tetap berjalan.','Benar isinya, tapi caranya mempermalukan.','Tepat, tapi rekan yang tersinggung tidak melihat ada yang membelanya.'],
+  ex:'Candaan bernada SARA perlu diluruskan segera, dengan cara yang sopan dan tidak mempermalukan.'},
+ {sec:'TKP',t:'tkp-tik',q:'Kantor Anda mulai memakai aplikasi layanan baru yang belum Anda kuasai. Sikap Anda …',
+  opts:['Tetap memakai cara manual','Meminta rekan mengerjakan bagian saya yang memakai aplikasi','Menunggu pelatihan resmi','Mempelajari sendiri dari buku panduan','Mempelajari panduan, ikut pelatihan, bertanya kepada rekan yang paham, lalu langsung menerapkannya'],
+  sc:[1,2,3,4,5],
+  w:['Menolak perubahan.','Melempar tugas.','Pasif.','Inisiatif, tapi belum memakai semua sumber belajar.','Proaktif belajar dan langsung menerapkan.'],
+  ex:'TKP bidang TIK menilai kemauan belajar teknologi dan memakainya dalam pekerjaan.'},
+ {sec:'TKP',t:'tkp-tik',q:'Anda menerima email dari pengirim tak dikenal yang meminta Anda login ulang akun kantor melalui sebuah tautan. Sikap Anda …',
+  opts:['Mengklik tautan dan login untuk memastikan','Meneruskan email ke rekan untuk dimintai pendapat','Mengabaikan dan menghapus email','Tidak mengklik tautan dan menghubungi tim TI','Tidak mengklik tautan, melaporkannya ke tim TI, dan mengingatkan rekan kerja agar waspada'],
+  sc:[1,2,3,4,5],
+  w:['Berisiko pencurian akun (phishing).','Menyebarkan tautan berbahaya.','Aman bagi diri sendiri, tapi rekan lain tetap berisiko.','Aman dan melapor.','Aman, melapor, dan melindungi rekan.'],
+  ex:'Ciri phishing: pengirim asing dan permintaan login lewat tautan. Jangan klik, laporkan, dan ingatkan orang lain.'},
+ {sec:'TKP',t:'tkp-profesional',q:'Beberapa tugas Anda memiliki tenggat yang bersamaan. Sikap Anda …',
+  opts:['Meminta perpanjangan waktu untuk semua tugas','Mengerjakan yang paling mudah dulu','Lembur menyelesaikan semuanya sendiri tanpa koordinasi','Membuat daftar prioritas lalu mengerjakannya','Menyusun prioritas berdasarkan urgensi dan dampak, mengerjakannya sesuai jadwal, dan memberi tahu atasan bila ada yang berisiko terlambat'],
+  sc:[1,2,3,4,5],
+  w:['Menghindari tanggung jawab.','Tugas penting bisa terlambat.','Kerja keras, tapi tanpa strategi dan komunikasi.','Terencana, tapi tanpa komunikasi risiko.','Terencana sekaligus komunikatif.'],
+  ex:'Profesionalisme: atur prioritas dan komunikasikan risiko lebih awal.'},
+ {sec:'TKP',t:'tkp-profesional',q:'Atasan mengkritik laporan Anda di depan tim. Sikap Anda …',
+  opts:['Membela diri bahwa laporan sudah benar','Diam, lalu mengeluh kepada rekan','Menjelaskan alasan saya, lalu memperbaikinya','Menerima dan memperbaiki laporan','Menerima, mencatat masukan, menanyakan bagian yang belum jelas, lalu memperbaiki laporan'],
+  sc:[2,1,3,4,5],
+  w:['Defensif.','Tidak dewasa dan memperkeruh suasana.','Mau memperbaiki, tapi masih defensif.','Terbuka, tapi belum memastikan pemahaman.','Terbuka, aktif memahami masukan, dan memperbaiki.'],
+  ex:'Kritik diterima sebagai bahan perbaikan. Bertanya memastikan perbaikannya tepat sasaran.'},
+ {sec:'TKP',t:'tkp-radikal',q:'Di grup WhatsApp kantor beredar pesan yang menyebar kebencian terhadap kelompok tertentu dan mengajak menolak Pancasila. Sikap Anda …',
+  opts:['Meneruskannya ke grup lain agar orang waspada','Membiarkan karena bukan urusan saya','Menghapus pesan itu dari ponsel saya','Menegur pengirim secara pribadi','Tidak meneruskan, mengingatkan anggota grup, dan melaporkannya ke admin atau atasan'],
+  sc:[1,2,3,4,5],
+  w:['Ikut menyebarkan konten radikal.','Pasif.','Tidak menyebarkan, tapi tidak mencegah.','Ada tindakan, tapi anggota grup lain tidak diingatkan.','Tidak menyebarkan, mengingatkan, dan melapor lewat jalur resmi.'],
+  ex:'Konten radikal dihentikan penyebarannya, diluruskan, dan dilaporkan.'},
+ {sec:'TKP',t:'tkp-radikal',q:'Seorang rekan mulai berpendapat bahwa demokrasi haram dan mengajak Anda ikut kajian tertutup yang menolak NKRI. Sikap Anda …',
+  opts:['Ikut sekali untuk tahu isinya','Menjauhi rekan itu','Menolak ajakannya','Menolak dan mengajaknya berdiskusi tentang nilai Pancasila','Menolak ajakan, berdialog mengingatkan nilai kebangsaan, dan melapor ke atasan bila ia terus menyebarkan paham itu'],
+  sc:[1,2,3,4,5],
+  w:['Berisiko terpapar.','Menghindar tanpa menyelesaikan masalah.','Benar, tapi pasif terhadap rekan.','Menolak dan berdialog.','Menolak, berdialog, dan melapor bila berlanjut.'],
+  ex:'Tolak dengan tegas, dekati dengan dialog, dan pakai jalur resmi bila paham itu terus disebarkan.'}
+]},
+{name:'Paket 2',items:[
+ {sec:'TWK',t:'twk-sejarah',q:'Istilah "Pancasila" sebagai nama dasar negara pertama kali dikemukakan dalam sidang BPUPKI oleh …',
+  opts:['Mr. Moh. Yamin','Mr. Soepomo','Ir. Soekarno','Drs. Moh. Hatta','Ki Bagus Hadikusumo'],a:2,
+  w:['Yamin menyampaikan usulan dasar negara pada 29 Mei, tanpa istilah "Pancasila".','Soepomo berpidato 31 Mei tentang negara integralistik.','','Hatta tidak berpidato soal dasar negara di sidang ini.','Ki Bagus anggota BPUPKI, tapi bukan pencetus istilah ini.'],
+  ex:'Soekarno memperkenalkan istilah Pancasila dalam pidatonya 1 Juni 1945, yang kini diperingati sebagai Hari Lahir Pancasila.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Piagam Jakarta dirumuskan oleh Panitia Sembilan pada tanggal …',
+  opts:['29 Mei 1945','1 Juni 1945','22 Juni 1945','17 Agustus 1945','18 Agustus 1945'],a:2,
+  w:['Awal sidang pertama BPUPKI.','Pidato Soekarno tentang Pancasila.','','Proklamasi kemerdekaan.','Pengesahan UUD 1945 oleh PPKI.'],
+  ex:'Panitia Sembilan merumuskan Piagam Jakarta pada 22 Juni 1945.'},
+ {sec:'TWK',t:'twk-sejarah',q:'UUD 1945 disahkan oleh … pada tanggal …',
+  opts:['BPUPKI, 17 Agustus 1945','PPKI, 18 Agustus 1945','PPKI, 17 Agustus 1945','BPUPKI, 22 Juni 1945','KNIP, 18 Agustus 1945'],a:1,
+  w:['BPUPKI sudah dibubarkan dan tanggalnya hari Proklamasi.','','Tanggalnya sehari terlalu cepat.','Tanggal Piagam Jakarta.','KNIP dibentuk setelahnya, bukan pengesah UUD.'],
+  ex:'PPKI mengesahkan UUD 1945 dan memilih Presiden serta Wakil Presiden pada 18 Agustus 1945.'},
+ {sec:'TWK',t:'twk-uud',q:'"Kedaulatan berada di tangan rakyat dan dilaksanakan menurut Undang-Undang Dasar." Bunyi ini terdapat dalam UUD 1945 …',
+  opts:['Pasal 1 ayat (1)','Pasal 1 ayat (2)','Pasal 1 ayat (3)','Pasal 2 ayat (1)','Pasal 3 ayat (1)'],a:1,
+  w:['Bentuk negara kesatuan berbentuk republik.','','Negara hukum.','Susunan keanggotaan MPR.','Wewenang MPR mengubah UUD.'],
+  ex:'Pasal 1 ayat (2) mengatur kedaulatan rakyat.'},
+ {sec:'TWK',t:'twk-integritas',q:'Rekan Anda datang terlambat dan meminta Anda mengisikan presensi kehadirannya tepat waktu. Sikap yang sesuai integritas adalah …',
+  opts:['Mengisikannya demi solidaritas','Mengisikannya sekali ini saja','Menolak dan menyarankannya mengisi presensi sesuai jam kedatangan sebenarnya','Diam-diam melaporkannya ke atasan tanpa bicara kepadanya','Meminta rekan lain yang mengisikan'],a:2,
+  w:['Solidaritas tidak membenarkan kecurangan.','"Sekali ini" tetap pemalsuan data.','','Melewatkan kesempatan mengingatkan secara langsung.','Tetap memalsukan presensi.'],
+  ex:'Integritas berarti jujur dan konsisten, termasuk menolak memalsukan data sekecil apa pun.'},
+ {sec:'TWK',t:'twk-belanegara',q:'Berikut yang BUKAN termasuk nilai dasar bela negara menurut UU No. 23 Tahun 2019 adalah …',
+  opts:['Cinta tanah air','Sadar berbangsa dan bernegara','Setia pada Pancasila sebagai ideologi negara','Rela berkorban untuk bangsa dan negara','Mengutamakan kepentingan golongan'],a:4,
+  w:['Termasuk nilai dasar.','Termasuk nilai dasar.','Termasuk nilai dasar.','Termasuk nilai dasar.',''],
+  ex:'Nilai dasar bela negara: cinta tanah air, sadar berbangsa dan bernegara, setia pada Pancasila, rela berkorban, dan kemampuan awal bela negara.'},
+ {sec:'TWK',t:'twk-bahasa',q:'Kalimat berikut yang efektif adalah …',
+  opts:['Para hadirin dimohon berdiri.','Kepada peserta rapat dimohon hadir tepat waktu.','Peserta rapat dimohon hadir tepat waktu.','Banyak warga-warga yang datang.','Dia naik ke atas panggung.'],a:2,
+  w:['Pleonasme: "hadirin" sudah jamak.','Subjek didahului kata depan "kepada".','','Pleonasme: "banyak" dan bentuk ulang.','Pleonasme: "naik" sudah berarti ke atas.'],
+  ex:'Kalimat efektif punya subjek jelas tanpa kata depan dan tidak mengandung kata berlebih.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Teks Proklamasi Kemerdekaan dibacakan di …',
+  opts:['Jalan Pegangsaan Timur No. 56, Jakarta','Rengasdengklok','Rumah Laksamana Maeda, Jalan Imam Bonjol No. 1','Lapangan Ikada','Gedung Pancasila'],a:0,
+  w:['','Tempat Soekarno-Hatta "diamankan" golongan muda pada 16 Agustus.','Tempat perumusan naskah Proklamasi.','Tempat rapat raksasa 19 September 1945.','Tempat sidang BPUPKI.'],
+  ex:'Proklamasi dibacakan di kediaman Soekarno, Jalan Pegangsaan Timur 56, pada 17 Agustus 1945.'},
+ {sec:'TIU',t:'tiu-sinonim',q:'KONKLUSI = …',opts:['Pendahuluan','Kesimpulan','Kesepakatan','Pendapat','Pembuktian'],a:1,
+  w:['Kebalikannya.','','Kesepakatan = konsensus.','Pendapat = opini.','Pembuktian = verifikasi.'],
+  ex:'Konklusi berarti kesimpulan.'},
+ {sec:'TIU',t:'tiu-antonim',q:'PROGRESIF >< …',opts:['Maju','Regresif','Agresif','Modern','Dinamis'],a:1,
+  w:['Sinonim.','','Agresif bermakna menyerang.','Mirip makna.','Mirip makna.'],
+  ex:'Progresif = ke arah kemajuan. Regresif = mundur.'},
+ {sec:'TIU',t:'tiu-analogi',q:'PENA : PENULIS = … : …',opts:['Cat : Kanvas','Kuas : Pelukis','Pisau : Dapur','Gunting : Kertas','Palu : Paku'],a:1,
+  w:['Bahan dan media.','','Alat dan tempat.','Alat dan objeknya.','Alat dan objeknya.'],
+  ex:'Pena adalah alat kerja penulis, kuas adalah alat kerja pelukis.'},
+ {sec:'TIU',t:'tiu-silogisme',q:'Semua pegawai yang disiplin mendapat tunjangan kinerja penuh.\nSebagian pegawai bagian keuangan tidak mendapat tunjangan kinerja penuh.\nKesimpulan yang tepat adalah …',
+  opts:['Semua pegawai bagian keuangan tidak disiplin','Sebagian pegawai bagian keuangan disiplin','Sebagian pegawai bagian keuangan tidak disiplin','Pegawai bagian keuangan tidak mendapat tunjangan','Tidak dapat disimpulkan'],a:2,
+  w:['Terlalu luas; premis hanya "sebagian".','Premis tidak menyatakan ini secara pasti.','','Terlalu luas.','Kesimpulan bisa ditarik.'],
+  ex:'Yang tidak mendapat tunjangan penuh pasti tidak disiplin (kontraposisi). Jadi sebagian pegawai keuangan tidak disiplin.'},
+ {sec:'TIU',t:'tiu-analitis',q:'Lima rapat (P, Q, R, S, T) dijadwalkan Senin–Jumat, satu rapat per hari. Q tepat sehari setelah P. R hari Rabu. T tidak pada hari Senin atau Jumat. S tidak pada hari Senin. Rapat T dilaksanakan hari …',
+  opts:['Senin','Selasa','Rabu','Kamis','Jumat'],a:3,
+  w:['T tidak boleh Senin.','Jika T Selasa, P–Q harus Kamis–Jumat dan S jatuh Senin (dilarang).','Rabu milik R.','','T tidak boleh Jumat.'],
+  ex:'P–Q harus Senin–Selasa atau Kamis–Jumat. Jika Kamis–Jumat, T=Selasa dan S=Senin (dilarang). Jadi P=Senin, Q=Selasa, R=Rabu, T=Kamis, S=Jumat.'},
+ {sec:'TIU',t:'tiu-deret',q:'2, 3, 5, 9, 17, …',opts:['25','31','33','34','35'],a:2,
+  w:['Pola dianggap +8 tetap.','Salah hitung.','','Salah hitung.','Salah hitung.'],
+  ex:'Selisihnya +1, +2, +4, +8 (dikali 2), berikutnya +16 → 33. Bisa juga dibaca ×2 − 1.'},
+ {sec:'TIU',t:'tiu-deret',q:'4, 10, 8, 15, 12, 20, …',opts:['14','16','18','24','25'],a:1,
+  w:['Salah pola.','','Salah pola.','Mengira pola suku genap.','Itu suku genap berikutnya (+5), bukan suku ke-7.'],
+  ex:'Deret loncat: suku ganjil 4, 8, 12 (+4) dan suku genap 10, 15, 20 (+5). Suku ke-7 adalah suku ganjil → 16.'},
+ {sec:'TIU',t:'tiu-hitung',q:'1/4 + 0,375 + 12,5% = …',opts:['0,625','0,70','0,75','0,80','0,875'],a:2,
+  w:['Lupa menjumlahkan 12,5%.','Salah hitung.','','Salah hitung.','Salah konversi.'],
+  ex:'0,25 + 0,375 + 0,125 = 0,75.'},
+ {sec:'TIU',t:'tiu-perbandingan',q:'Seorang pedagang membeli 20 kg beras seharga Rp240.000, lalu menjual seluruhnya dengan harga Rp15.000/kg. Persentase keuntungannya …',
+  opts:['15%','20%','25%','30%','35%'],a:2,
+  w:['Salah hitung.','Itu untung dibagi harga jual (60.000 ÷ 300.000).','','Salah hitung.','Salah hitung.'],
+  ex:'Hasil jual 20 × 15.000 = 300.000. Untung 60.000 ÷ harga beli 240.000 × 100% = 25%.'},
+ {sec:'TIU',t:'tiu-cerita',q:'Umur ayah sekarang 3 kali umur anaknya. Sepuluh tahun lagi, umur ayah 2 kali umur anaknya. Umur anak sekarang adalah …',
+  opts:['8 tahun','10 tahun','12 tahun','15 tahun','20 tahun'],a:1,
+  w:['Tidak memenuhi persamaan.','','Tidak memenuhi persamaan.','Tidak memenuhi persamaan.','Itu umur anak 10 tahun lagi.'],
+  ex:'3x + 10 = 2(x + 10) → 3x + 10 = 2x + 20 → x = 10.'},
+ {sec:'TKP',t:'tkp-pelayanan',q:'Lima menit setelah jam layanan berakhir, seorang warga datang untuk urusan yang mendesak. Sikap Anda …',
+  opts:['Melayaninya dengan cepat karena masih sempat','Menolak karena layanan sudah tutup','Melayaninya bila aturan memungkinkan, atau menjelaskan dengan baik dan memberi jadwal atau alternatif layanan daring','Melayaninya tapi meminta imbalan','Memintanya datang lagi besok'],
+  sc:[4,2,5,1,3],
+  w:['Membantu, tapi tanpa memperhatikan aturan.','Kaku dan tidak empati.','Empati sekaligus taat aturan, dan warga tetap mendapat jalan keluar.','Pungutan liar.','Sesuai aturan, tapi tanpa solusi.'],
+  ex:'Pelayanan prima: utamakan kebutuhan warga dalam batas aturan, dan selalu beri jalan keluar.'},
+ {sec:'TKP',t:'tkp-pelayanan',q:'Seorang warga mengeluhkan sikap rekan Anda yang tidak ramah. Sikap Anda …',
+  opts:['Membela rekan saya','Meminta warga melapor langsung ke atasan','Mencatat keluhannya','Mengambil alih pelayanan warga tersebut','Mendengarkan keluhannya, meminta maaf atas nama instansi, menyelesaikan kebutuhannya, lalu menyampaikan masukan kepada rekan atau atasan'],
+  sc:[1,2,3,4,5],
+  w:['Mengabaikan keluhan warga.','Melempar ke pihak lain.','Didokumentasikan, tapi tidak ditindaklanjuti.','Kebutuhan warga terpenuhi, tapi tanpa perbaikan.','Empati, solusi, dan perbaikan layanan.'],
+  ex:'Tangani keluhan sampai tuntas, lalu teruskan masukan agar tidak terulang.'},
+ {sec:'TKP',t:'tkp-jejaring',q:'Pekerjaan Anda membutuhkan data dari dinas lain yang lambat merespons surat. Sikap Anda …',
+  opts:['Menunggu balasan surat','Memakai data perkiraan sendiri','Mengirim surat resmi ulang','Menelepon langsung penanggung jawab data','Menghubungi penanggung jawab data, menjelaskan kebutuhan dan tenggat, serta menawarkan bantuan agar data cepat tersedia'],
+  sc:[2,1,3,4,5],
+  w:['Pasif.','Tidak akurat dan tidak profesional.','Sesuai prosedur, tapi lambat.','Proaktif.','Proaktif, jelas, dan membangun hubungan kerja.'],
+  ex:'Jejaring kerja: inisiatif berkomunikasi langsung dan kolaboratif.'},
+ {sec:'TKP',t:'tkp-jejaring',q:'Anda diminta mewakili kantor dalam rapat koordinasi antarinstansi. Sikap Anda …',
+  opts:['Meminta rekan lain menggantikan','Datang dan duduk mendengarkan','Datang dan berkenalan dengan peserta lain','Datang dan mencatat hasil rapat','Datang, aktif berdiskusi, menjalin kontak dengan peserta, dan melaporkan hasilnya kepada atasan'],
+  sc:[1,2,3,4,5],
+  w:['Menghindari tugas.','Pasif.','Membangun jejaring, tapi tugas utama kurang.','Bertanggung jawab, tapi kurang aktif.','Aktif, membangun jejaring, dan bertanggung jawab.'],
+  ex:'Mewakili instansi berarti aktif berkontribusi dan menindaklanjuti hasilnya.'},
+ {sec:'TKP',t:'tkp-sosbud',q:'Warga di tempat tugas Anda rutin melakukan kerja bakti setiap Minggu. Sikap Anda …',
+  opts:['Tidak ikut karena hari libur','Memberi sumbangan uang sebagai pengganti','Ikut sesekali','Ikut serta dan mengajak rekan kantor','Ikut rutin, berbaur dengan warga, dan memanfaatkannya untuk mengenal kebutuhan masyarakat'],
+  sc:[1,2,3,4,5],
+  w:['Tidak berbaur.','Ada kepedulian, tapi tidak berbaur.','Kurang konsisten.','Aktif dan menggerakkan orang lain.','Aktif, konsisten, dan bermanfaat bagi tugas.'],
+  ex:'Berbaur dengan warga juga membantu memahami kebutuhan layanan.'},
+ {sec:'TKP',t:'tkp-sosbud',q:'Jadwal kegiatan tim bentrok dengan waktu ibadah salah satu anggota yang berbeda agama. Sikap Anda …',
+  opts:['Tetap pada jadwal yang disetujui mayoritas','Membiarkan anggota itu tidak ikut','Menyerahkan keputusan kepada ketua tim','Mendiskusikannya bersama tim','Mengusulkan jadwal alternatif yang memungkinkan semua anggota hadir'],
+  sc:[1,2,3,4,5],
+  w:['Mengabaikan hak beribadah.','Mengucilkan.','Pasif.','Ada niat, tapi belum ada solusi.','Toleran dan memberi solusi.'],
+  ex:'Hormati keberagaman dengan mencari solusi yang mengakomodasi semua.'},
+ {sec:'TKP',t:'tkp-tik',q:'Atasan meminta rekap data bulanan disajikan lebih cepat. Sikap Anda …',
+  opts:['Mengerjakan seperti biasa','Lembur mengerjakannya secara manual','Meminta bantuan rekan','Mempelajari fitur baru di aplikasi spreadsheet','Memakai rumus, templat, atau dasbor di aplikasi pengolah data agar rekap cepat dan akurat'],
+  sc:[1,2,3,4,5],
+  w:['Tidak menjawab permintaan atasan.','Melelahkan dan rawan salah.','Menambah beban orang lain.','Belajar, tapi belum diterapkan.','Memanfaatkan teknologi untuk efisiensi.'],
+  ex:'Pilih pemanfaatan teknologi untuk pekerjaan yang lebih cepat dan akurat.'},
+ {sec:'TKP',t:'tkp-tik',q:'Rekan meminta kata sandi akun sistem kepegawaian Anda untuk membantu input data. Sikap Anda …',
+  opts:['Memberikannya karena ia rekan dekat','Memberikannya lalu menggantinya nanti','Menolak','Menolak dan menawarkan diri untuk menginput datanya','Menolak memberikan kata sandi, menjelaskan alasannya, dan membantunya mengajukan hak akses resmi'],
+  sc:[1,2,3,4,5],
+  w:['Melanggar keamanan data.','Tetap melanggar.','Aman, tapi tidak membantu.','Aman dan membantu.','Aman, edukatif, dan menyelesaikan masalah.'],
+  ex:'Kata sandi bersifat pribadi. Bantu dengan cara yang aman dan resmi.'},
+ {sec:'TKP',t:'tkp-profesional',q:'Anda menyadari ada kesalahan input pada data yang sudah dikirim ke atasan. Sikap Anda …',
+  opts:['Diam dan berharap tidak ketahuan','Memperbaikinya diam-diam','Melapor kepada atasan','Memperbaiki lalu mengirim ulang dengan penjelasan','Segera melapor, memperbaiki, dan memeriksa ulang agar tidak terulang'],
+  sc:[1,2,3,4,5],
+  w:['Tidak jujur.','Tidak transparan.','Jujur, tapi belum memperbaiki.','Jujur dan memperbaiki.','Jujur, memperbaiki, dan mencegah terulang.'],
+  ex:'Akui, perbaiki, dan cegah terulang.'},
+ {sec:'TKP',t:'tkp-profesional',q:'Atasan memberi Anda tugas di luar keahlian Anda. Sikap Anda …',
+  opts:['Menolak','Meminta rekan yang ahli mengerjakannya','Menerima dan mengerjakan semampunya','Menerima dan mempelajari hal yang dibutuhkan','Menerima, mempelajarinya, bertanya kepada yang ahli, dan menyelesaikannya sebaik mungkin'],
+  sc:[1,2,3,4,5],
+  w:['Tidak bertanggung jawab.','Melempar tugas.','Menerima, tapi tanpa usaha lebih.','Mau belajar.','Mau belajar, kolaboratif, dan bertanggung jawab.'],
+  ex:'Tugas baru adalah kesempatan belajar.'},
+ {sec:'TKP',t:'tkp-radikal',q:'Teman membagikan video ajakan kekerasan atas nama agama di media sosial. Sikap Anda …',
+  opts:['Membagikannya agar orang lain tahu','Membagikannya dengan komentar mengecam','Mengabaikannya','Mengingatkan teman agar menghapusnya','Tidak menyebarkan, melaporkan konten ke platform atau kanal aduan resmi, dan mengingatkan teman'],
+  sc:[1,2,3,4,5],
+  w:['Ikut menyebarkan.','Tetap ikut menyebarkan.','Pasif.','Menghentikan penyebaran dari teman.','Menghentikan penyebaran sampai ke sumbernya.'],
+  ex:'Jangan ikut menyebarkan, laporkan lewat kanal resmi, dan ingatkan orang terdekat.'},
+ {sec:'TKP',t:'tkp-radikal',q:'Anda menjadi panitia peringatan hari besar keagamaan di kantor, dan panitia mengusulkan penceramah yang dikenal menyuarakan intoleransi. Sikap Anda …',
+  opts:['Setuju saja','Mundur dari kepanitiaan','Menyampaikan keberatan','Mencari tahu rekam jejak penceramah lalu membahasnya dengan panitia','Menyampaikan keberatan disertai alasan dan mengusulkan penceramah yang moderat'],
+  sc:[1,2,3,4,5],
+  w:['Membiarkan paham intoleran masuk.','Menghindar.','Tepat, tapi tanpa solusi.','Hati-hati dan berbasis data.','Tegas, beralasan, dan memberi solusi.'],
+  ex:'Cegah ruang bagi paham intoleran dengan alternatif yang moderat.'}
+]},
+{name:'Paket 3',items:[
+ {sec:'TWK',t:'twk-pancasila',q:'Lambang rantai pada perisai Garuda Pancasila melambangkan sila ke-…',
+  opts:['Pertama','Kedua','Ketiga','Keempat','Kelima'],a:1,
+  w:['Sila pertama dilambangkan bintang.','','Sila ketiga dilambangkan pohon beringin.','Sila keempat dilambangkan kepala banteng.','Sila kelima dilambangkan padi dan kapas.'],
+  ex:'Rantai melambangkan sila kedua: Kemanusiaan yang adil dan beradab.'},
+ {sec:'TWK',t:'twk-hukum',q:'Ketentuan bahwa "Pancasila merupakan sumber segala sumber hukum negara" dinyatakan dalam …',
+  opts:['UU No. 23 Tahun 2019','UU No. 24 Tahun 2009','UU No. 12 Tahun 2011','UU No. 20 Tahun 2023','UU No. 39 Tahun 1999'],a:2,
+  w:['UU tentang Pengelolaan Sumber Daya Nasional untuk Pertahanan Negara (bela negara).','UU tentang Bendera, Bahasa, dan Lambang Negara, serta Lagu Kebangsaan.','','UU tentang Aparatur Sipil Negara.','UU tentang Hak Asasi Manusia.'],
+  ex:'UU 12/2011 tentang Pembentukan Peraturan Perundang-undangan, Pasal 2.'},
+ {sec:'TWK',t:'twk-hukum',q:'Urutan hierarki peraturan perundang-undangan setelah UUD 1945 yang benar adalah …',
+  opts:['Tap MPR – UU/Perppu – Peraturan Pemerintah','UU – Tap MPR – Peraturan Pemerintah','Peraturan Pemerintah – UU – Perpres','Tap MPR – Peraturan Pemerintah – UU','UU – Peraturan Pemerintah – Tap MPR'],a:0,
+  w:['','Tap MPR berada di atas UU.','PP berada di bawah UU.','UU berada di atas PP.','Tap MPR berada tepat di bawah UUD.'],
+  ex:'UU 12/2011 Pasal 7: UUD 1945 → Tap MPR → UU/Perppu → PP → Perpres → Perda Provinsi → Perda Kabupaten/Kota.'},
+ {sec:'TWK',t:'twk-asn',q:'Dalam nilai dasar ASN "BerAKHLAK", huruf H adalah singkatan dari …',
+  opts:['Humanis','Harmonis','Hormat','Handal','Hemat'],a:1,
+  w:['Bukan bagian BerAKHLAK.','','Bukan bagian BerAKHLAK.','Bukan bagian BerAKHLAK.','Bukan bagian BerAKHLAK.'],
+  ex:'BerAKHLAK: Berorientasi Pelayanan, Akuntabel, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Berikut yang BUKAN isi Dekrit Presiden 5 Juli 1959 adalah …',
+  opts:['Pembubaran Konstituante','Berlakunya kembali UUD 1945','Tidak berlakunya UUDS 1950','Pembentukan MPRS dan DPAS','Pembubaran DPR hasil Pemilu 1955'],a:4,
+  w:['Termasuk isi dekrit.','Termasuk isi dekrit.','Termasuk isi dekrit.','Termasuk isi dekrit.',''],
+  ex:'DPR hasil Pemilu 1955 baru dibubarkan pada Maret 1960, bukan lewat Dekrit 5 Juli 1959.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Pada masa berlakunya Konstitusi RIS (1949–1950), bentuk negara Indonesia adalah …',
+  opts:['Kesatuan','Serikat (federal)','Kerajaan','Persemakmuran','Kesatuan dengan otonomi khusus'],a:1,
+  w:['Bentuk kesatuan berlaku kembali setelah UUDS 1950.','','Indonesia tidak pernah berbentuk kerajaan.','Tidak pernah berlaku.','Tidak sesuai masa RIS.'],
+  ex:'Hasil Konferensi Meja Bundar, Indonesia menjadi Republik Indonesia Serikat (federal).'},
+ {sec:'TWK',t:'twk-integritas',q:'Anda mengetahui seorang rekan memanipulasi bukti pertanggungjawaban perjalanan dinas. Sikap yang sesuai integritas adalah …',
+  opts:['Membiarkan karena bukan urusan saya','Ikut melakukannya agar tidak dikucilkan','Mengingatkannya dan melaporkan melalui atasan atau saluran pengaduan resmi (whistleblowing)','Menyebarkannya di media sosial','Meminta bagian agar tutup mulut'],a:2,
+  w:['Membiarkan pelanggaran.','Ikut korupsi.','','Tidak melalui jalur resmi dan berisiko fitnah.','Pemerasan dan ikut korupsi.'],
+  ex:'Integritas berarti berani mengingatkan dan melapor lewat jalur resmi.'},
+ {sec:'TWK',t:'twk-bahasa',q:'Penulisan gabungan kata yang benar adalah …',
+  opts:['kerjasama','tanggungjawab','kerja sama','antar kota','segi tiga'],a:2,
+  w:['Seharusnya dipisah: kerja sama.','Seharusnya dipisah: tanggung jawab.','','"Antar" unsur terikat, harus disambung: antarkota.','Ditulis serangkai: segitiga.'],
+  ex:'"Kerja sama" dan "tanggung jawab" ditulis terpisah. Unsur terikat seperti "antar-" ditulis serangkai (antarkota), begitu pula "segitiga".'},
+ {sec:'TIU',t:'tiu-sinonim',q:'AMBIGU = …',opts:['Jelas','Taksa','Tunggal','Lugas','Tepat'],a:1,
+  w:['Kebalikannya.','','Kebalikannya.','Lugas = apa adanya.','Tidak berhubungan.'],
+  ex:'Ambigu berarti bermakna ganda (taksa).'},
+ {sec:'TIU',t:'tiu-antonim',q:'NOMADEN >< …',opts:['Berpindah','Menetap','Mengembara','Bertani','Berburu'],a:1,
+  w:['Sinonim.','','Sinonim.','Kegiatan, bukan lawan kata.','Kegiatan, bukan lawan kata.'],
+  ex:'Nomaden = berpindah-pindah. Lawannya menetap.'},
+ {sec:'TIU',t:'tiu-analogi',q:'SEMARANG : JAWA TENGAH = … : …',opts:['Surabaya : Indonesia','Medan : Sumatra','Bali : Denpasar','Bandung : Jawa Barat','Makassar : Sulawesi Utara'],a:3,
+  w:['Kota dan negara.','Sumatra adalah pulau, bukan provinsi.','Urutannya terbalik: provinsi : ibu kota.','','Makassar ibu kota Sulawesi Selatan.'],
+  ex:'Ibu kota provinsi : provinsinya. Bandung adalah ibu kota Jawa Barat.'},
+ {sec:'TIU',t:'tiu-silogisme',q:'Tidak ada ikan yang bernapas dengan paru-paru.\nPaus bernapas dengan paru-paru.\nKesimpulan yang tepat adalah …',
+  opts:['Paus adalah ikan','Paus bukan ikan','Sebagian paus adalah ikan','Paus bernapas dengan insang','Tidak dapat disimpulkan'],a:1,
+  w:['Bertentangan dengan premis.','','Tidak ada dasar "sebagian".','Bertentangan dengan premis.','Kesimpulan bisa ditarik.'],
+  ex:'Semua yang bernapas dengan paru-paru bukan ikan, dan paus termasuk di dalamnya.'},
+ {sec:'TIU',t:'tiu-analitis',q:'Nilai Rani lebih tinggi daripada Sinta. Nilai Tono lebih rendah daripada Sinta. Nilai Umar lebih tinggi daripada Rani. Nilai Vina di antara Sinta dan Rani. Siapa yang nilainya tertinggi ketiga?',
+  opts:['Rani','Sinta','Tono','Umar','Vina'],a:4,
+  w:['Rani tertinggi kedua.','Sinta tertinggi keempat.','Tono terendah.','Umar tertinggi.',''],
+  ex:'Urutan: Umar > Rani > Vina > Sinta > Tono.'},
+ {sec:'TIU',t:'tiu-deret',q:'2, 6, 12, 20, 30, …',opts:['36','40','42','44','48'],a:2,
+  w:['Salah pola.','Salah pola.','','Salah pola.','Salah pola.'],
+  ex:'Selisih +4, +6, +8, +10, berikutnya +12 → 42. Atau n × (n+1): 6 × 7 = 42.'},
+ {sec:'TIU',t:'tiu-deret',q:'3, 4, 8, 17, 33, …',opts:['49','50','56','58','60'],a:3,
+  w:['Mengira selisih +16.','Salah pola.','Salah pola.','','Salah pola.'],
+  ex:'Selisihnya bilangan kuadrat: +1, +4, +9, +16, berikutnya +25 → 58.'},
+ {sec:'TIU',t:'tiu-hitung',q:'√144 + 2³ × 3 − 10 = …',opts:['22','26','30','34','50'],a:1,
+  w:['Salah hitung.','','Salah hitung.','Salah hitung.','Menjumlahkan dulu sebelum mengalikan: (12 + 8) × 3 − 10.'],
+  ex:'12 + (8 × 3) − 10 = 12 + 24 − 10 = 26. Kali dikerjakan sebelum tambah.'},
+ {sec:'TIU',t:'tiu-cerita',q:'Enam pekerja dapat menyelesaikan proyek dalam 20 hari. Agar proyek selesai dalam 15 hari, dibutuhkan tambahan pekerja sebanyak …',
+  opts:['1 orang','2 orang','3 orang','4 orang','8 orang'],a:1,
+  w:['Kurang.','','Kelebihan.','Kelebihan.','Itu jumlah total pekerja, bukan tambahannya.'],
+  ex:'6 × 20 = 120 orang-hari. 120 ÷ 15 = 8 pekerja. Tambahan = 8 − 6 = 2 orang.'},
+ {sec:'TIU',t:'tiu-cerita',q:'Rata-rata nilai 5 siswa adalah 70. Setelah seorang siswa baru bergabung, rata-ratanya menjadi 72. Nilai siswa baru tersebut adalah …',
+  opts:['72','76','80','82','84'],a:3,
+  w:['Itu rata-rata baru.','Salah hitung.','Salah hitung.','','Salah hitung.'],
+  ex:'Jumlah awal 5 × 70 = 350. Jumlah baru 6 × 72 = 432. Nilai siswa baru = 432 − 350 = 82.'},
+ {sec:'TKP',t:'tkp-pelayanan',q:'Seorang warga lanjut usia kesulitan mengisi formulir daring di kantor Anda. Sikap Anda …',
+  opts:['Memintanya kembali dengan pendamping','Memintanya meminta tolong keluarga','Memberikan panduan tertulis','Mengisikan formulir untuknya','Mendampinginya mengisi formulir sambil menjelaskan langkah-langkahnya'],
+  sc:[1,2,3,4,5],
+  w:['Menolak melayani.','Melempar ke pihak lain.','Membantu, tapi minim.','Membantu, tapi warga tidak paham prosesnya.','Membantu sekaligus memberdayakan.'],
+  ex:'Pelayanan inklusif: dampingi kelompok rentan sampai urusan selesai.'},
+ {sec:'TKP',t:'tkp-pelayanan',q:'Seorang warga menanyakan layanan yang bukan bidang Anda. Sikap Anda …',
+  opts:['Mengatakan itu bukan bagian saya','Mencoba menjawab sebisanya','Menyebutkan bagian yang tepat','Mengantarkannya ke bagian terkait','Mengarahkannya ke bagian yang tepat dan memastikan ia benar-benar terlayani'],
+  sc:[1,2,3,4,5],
+  w:['Tidak melayani.','Berisiko memberi informasi keliru.','Membantu, tapi minim.','Membantu secara langsung.','Membantu sampai tuntas.'],
+  ex:'Setiap petugas adalah wajah instansi. Pastikan warga sampai ke layanan yang benar.'},
+ {sec:'TKP',t:'tkp-jejaring',q:'Seorang pegawai baru di unit Anda tampak kesulitan beradaptasi. Sikap Anda …',
+  opts:['Membiarkannya belajar sendiri','Menunggunya bertanya','Memberi tahu atasan','Mengajaknya makan siang bersama','Menyapanya, mengenalkannya kepada rekan lain, dan menawarkan bantuan bila diperlukan'],
+  sc:[1,2,3,4,5],
+  w:['Tidak peduli.','Pasif.','Melempar ke atasan.','Ramah, tapi belum menyentuh pekerjaan.','Ramah, membangun jejaring, dan membantu.'],
+  ex:'Bantu rekan baru masuk ke jejaring tim.'},
+ {sec:'TKP',t:'tkp-jejaring',q:'Konflik antara dua anggota tim mulai mengganggu pekerjaan. Sikap Anda …',
+  opts:['Membiarkan mereka menyelesaikannya sendiri','Memihak yang menurut saya benar','Melaporkannya kepada atasan','Berbicara dengan masing-masing secara terpisah','Mempertemukan keduanya untuk berdiskusi dengan fokus pada tujuan tim'],
+  sc:[1,2,3,4,5],
+  w:['Konflik berlarut.','Memperkeruh.','Melempar masalah.','Menengahi, tapi belum mempertemukan.','Menengahi dan menyelesaikan.'],
+  ex:'Jembatani konflik dengan fokus pada tujuan bersama.'},
+ {sec:'TKP',t:'tkp-sosbud',q:'Anda dimutasi ke daerah terpencil dengan fasilitas terbatas. Sikap Anda …',
+  opts:['Mengajukan pindah','Menerimanya dengan terpaksa','Menerimanya sambil menunggu kesempatan pindah','Menerima dan beradaptasi','Menerima, beradaptasi, dan memanfaatkan potensi setempat untuk bekerja optimal'],
+  sc:[1,2,3,4,5],
+  w:['Menolak penugasan.','Tidak ikhlas.','Setengah hati.','Adaptif.','Adaptif dan produktif.'],
+  ex:'ASN siap ditempatkan di seluruh wilayah NKRI dan bekerja optimal di mana pun.'},
+ {sec:'TKP',t:'tkp-sosbud',q:'Seorang warga menyampaikan keperluannya dalam bahasa daerah yang tidak Anda pahami. Sikap Anda …',
+  opts:['Mengangguk saja','Meminta rekan mengambil alih','Memintanya berbicara dalam bahasa Indonesia','Meminta bantuan rekan yang paham bahasa tersebut untuk menerjemahkan','Dengan sopan meminta penjelasan dalam bahasa Indonesia atau bantuan penerjemah, lalu memastikan maksudnya sudah saya pahami'],
+  sc:[1,2,3,4,5],
+  w:['Berisiko salah paham.','Melempar tugas.','Tepat, tapi bisa terasa kaku.','Solutif.','Sopan, solutif, dan memastikan pemahaman.'],
+  ex:'Hargai bahasa warga dan pastikan pesan dipahami.'},
+ {sec:'TKP',t:'tkp-tik',q:'Arsip fisik di kantor Anda sering hilang. Sikap Anda …',
+  opts:['Membiarkannya karena prosedurnya sudah lama begitu','Memotret arsip penting dengan ponsel pribadi','Menyusun arsip lebih rapi di lemari','Mengusulkan digitalisasi arsip kepada atasan','Mengusulkan digitalisasi arsip dengan sistem penamaan dan cadangan data, serta siap membantu penerapannya'],
+  sc:[1,2,3,4,5],
+  w:['Tidak ada perbaikan.','Berisiko kebocoran data.','Perbaikan kecil.','Usulan baik.','Usulan lengkap dan siap terlibat.'],
+  ex:'Manfaatkan teknologi untuk tata kelola arsip yang aman.'},
+ {sec:'TKP',t:'tkp-tik',q:'Anda menemukan hoaks tentang program instansi Anda yang beredar di media sosial. Sikap Anda …',
+  opts:['Membalasnya dengan marah','Membiarkannya','Membuat klarifikasi sendiri di akun pribadi','Melaporkannya ke humas instansi','Melaporkannya ke humas agar dibuat klarifikasi resmi berbasis data, lalu ikut menyebarkan klarifikasi tersebut'],
+  sc:[1,2,3,4,5],
+  w:['Memperkeruh.','Pasif.','Niat baik, tapi bukan kanal resmi.','Tepat.','Tepat dan ikut melawan hoaks.'],
+  ex:'Lawan hoaks dengan klarifikasi resmi, lalu bantu sebarkan.'},
+ {sec:'TKP',t:'tkp-profesional',q:'Rekan meminta Anda menyelesaikan pekerjaannya karena ada urusan pribadi, padahal tugas Anda sendiri sedang banyak. Sikap Anda …',
+  opts:['Mengiyakan tapi tidak mengerjakannya','Mengerjakan tugasnya terlebih dahulu','Menolak','Menyarankannya meminta bantuan rekan lain','Menolak dengan sopan sambil menjelaskan beban kerja, dan menawarkan bantuan setelah tugas saya selesai'],
+  sc:[1,2,3,4,5],
+  w:['Tidak jujur.','Tugas sendiri terbengkalai.','Tegas, tapi kurang kooperatif.','Memberi jalan keluar.','Bertanggung jawab dan tetap kooperatif.'],
+  ex:'Tugas sendiri adalah prioritas, tapi tetap tawarkan bantuan.'},
+ {sec:'TKP',t:'tkp-profesional',q:'Target kinerja unit Anda naik, sementara waktu kerja tetap. Sikap Anda …',
+  opts:['Mengeluh','Meminta target diturunkan','Bekerja lebih lama','Membuat rencana kerja baru','Mengevaluasi cara kerja, mencari metode yang lebih efisien, dan berkonsultasi dengan atasan bila butuh sumber daya'],
+  sc:[1,2,3,4,5],
+  w:['Tidak produktif.','Menghindar.','Kerja keras, tapi tidak cerdas.','Terencana.','Inovatif dan komunikatif.'],
+  ex:'Hadapi target dengan inovasi dan komunikasi.'},
+ {sec:'TKP',t:'tkp-radikal',q:'Sebuah organisasi meminjam aula instansi untuk kegiatan, dan ternyata materinya menyebarkan paham anti-Pancasila. Sikap Anda …',
+  opts:['Tetap mengizinkan karena sudah membayar','Mengizinkan dengan syarat','Meminta mereka mengubah materinya','Menolak memberi izin','Menolak memberi izin sesuai aturan dan melaporkannya kepada atasan atau pihak berwenang'],
+  sc:[1,2,3,4,5],
+  w:['Memfasilitasi paham radikal.','Masih memfasilitasi.','Belum menutup ruang penyebaran.','Tegas.','Tegas dan ditindaklanjuti.'],
+  ex:'Fasilitas negara tidak boleh dipakai menyebarkan paham anti-Pancasila.'},
+ {sec:'TKP',t:'tkp-radikal',q:'Keponakan Anda aktif mengikuti akun media sosial yang mengajarkan bahwa pemerintah boleh dilawan dengan kekerasan. Sikap Anda …',
+  opts:['Membiarkannya karena itu urusan orang tuanya','Memarahinya','Memblokir akun-akun itu di ponselnya diam-diam','Memberi tahu orang tuanya','Mengajaknya berdialog dengan tenang, memberi pemahaman tentang nilai kebangsaan dan sumber yang moderat, serta melibatkan orang tuanya'],
+  sc:[1,2,3,4,5],
+  w:['Pasif.','Bisa membuatnya makin menutup diri.','Tidak menyentuh akar masalah.','Melibatkan keluarga.','Dialog, edukasi, dan pendampingan keluarga.'],
+  ex:'Pencegahan radikalisme di keluarga paling efektif lewat dialog dan pendampingan.'}
+]}
+];
+
+/* ================= SOAL TAMBAHAN (untuk tryout penuh 110 soal) ================= */
+function tk(t,q,opts,w,ex){return{sec:'TKP',t,q,opts,sc:[1,2,3,4,5],w,ex}}
+const NEW1=[
+ /* ---------- TWK ---------- */
+ {sec:'TWK',t:'twk-pancasila',q:'Kebiasaan menyelesaikan persoalan bersama dengan musyawarah untuk mufakat merupakan pengamalan sila ke-…',
+  opts:['Pertama','Kedua','Ketiga','Keempat','Kelima'],a:3,
+  w:['Sila pertama tentang Ketuhanan Yang Maha Esa.','Sila kedua tentang kemanusiaan.','Sila ketiga tentang persatuan.','','Sila kelima tentang keadilan sosial.'],
+  ex:'Sila keempat: Kerakyatan yang dipimpin oleh hikmat kebijaksanaan dalam permusyawaratan/perwakilan.'},
+ {sec:'TWK',t:'twk-uud',q:'"Negara Indonesia adalah negara hukum." Bunyi ini terdapat dalam UUD 1945 …',
+  opts:['Pasal 1 ayat (1)','Pasal 1 ayat (2)','Pasal 1 ayat (3)','Pasal 27 ayat (1)','Pasal 28D ayat (1)'],a:2,
+  w:['Bentuk negara kesatuan berbentuk republik.','Kedaulatan rakyat.','','Kesamaan kedudukan di dalam hukum dan pemerintahan.','Hak atas pengakuan, jaminan, perlindungan, dan kepastian hukum yang adil.'],
+  ex:'Pasal 1 ayat (3), hasil amandemen ketiga.'},
+ {sec:'TWK',t:'twk-uud',q:'Ketentuan bahwa Presiden dan Wakil Presiden dipilih dalam satu pasangan secara langsung oleh rakyat terdapat dalam UUD 1945 …',
+  opts:['Pasal 4 ayat (1)','Pasal 6A ayat (1)','Pasal 7','Pasal 7A','Pasal 22E ayat (1)'],a:1,
+  w:['Presiden memegang kekuasaan pemerintahan.','','Masa jabatan Presiden.','Alasan pemberhentian Presiden.','Asas pemilu luber jurdil lima tahun sekali.'],
+  ex:'Pasal 6A ayat (1): dipilih dalam satu pasangan secara langsung oleh rakyat.'},
+ {sec:'TWK',t:'twk-uud',q:'Menurut Pasal 7 UUD 1945, Presiden dan Wakil Presiden memegang jabatan selama … dan sesudahnya dapat dipilih kembali dalam jabatan yang sama hanya untuk … masa jabatan.',
+  opts:['4 tahun, satu kali','5 tahun, satu kali','5 tahun, dua kali','5 tahun, tanpa batas','6 tahun, satu kali'],a:1,
+  w:['Masa jabatannya 5 tahun.','','Hanya satu kali lagi, jadi maksimal dua periode.','Dibatasi sejak amandemen pertama 1999.','Masa jabatannya 5 tahun.'],
+  ex:'Lima tahun, dan hanya bisa dipilih kembali satu kali, sehingga paling lama dua periode.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Ketua Kongres Pemuda II tahun 1928 adalah …',
+  opts:['Soegondo Djojopoespito','Mohammad Yamin','W.R. Supratman','Sunario','Amir Sjarifuddin'],a:0,
+  w:['','Yamin menjadi sekretaris dan merumuskan teks Sumpah Pemuda.','Supratman memperdengarkan lagu Indonesia Raya.','Sunario menjadi pembicara dalam kongres.','Amir Sjarifuddin menjadi bendahara.'],
+  ex:'Kongres Pemuda II dipimpin Soegondo Djojopoespito dari PPPI.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Lagu Indonesia Raya pertama kali diperdengarkan di depan umum pada …',
+  opts:['Kongres Pemuda I tahun 1926','Kongres Pemuda II tahun 1928','Sidang BPUPKI tahun 1945','Upacara Proklamasi tahun 1945','Rapat Raksasa Ikada tahun 1945'],a:1,
+  w:['Lagu ini belum diciptakan untuk kongres pertama.','','Jauh setelah lagu ini dikenal.','Saat Proklamasi lagu ini sudah dikenal luas.','Jauh setelah lagu ini dikenal.'],
+  ex:'W.R. Supratman memperdengarkannya dengan biola pada Kongres Pemuda II, 28 Oktober 1928.'},
+ {sec:'TWK',t:'twk-pancasila',q:'Jumlah bulu pada leher Garuda Pancasila adalah …',
+  opts:['8','17','19','45','54'],a:3,
+  w:['Jumlah bulu ekor.','Jumlah bulu tiap sayap.','Jumlah bulu pada pangkal ekor.','','Tidak ada.'],
+  ex:'Sayap 17, ekor 8, pangkal ekor 19, leher 45, melambangkan 17-8-1945.'},
+ {sec:'TWK',t:'twk-uud',q:'Ketentuan mengenai lambang negara Garuda Pancasila dengan semboyan Bhinneka Tunggal Ika terdapat dalam UUD 1945 …',
+  opts:['Pasal 35','Pasal 36','Pasal 36A','Pasal 36B','Pasal 36C'],a:2,
+  w:['Bendera negara.','Bahasa negara.','','Lagu kebangsaan.','Ketentuan lebih lanjut diatur dengan undang-undang.'],
+  ex:'Pasal 35 bendera, 36 bahasa, 36A lambang, 36B lagu kebangsaan, 36C pengaturan lebih lanjut.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Deklarasi Djuanda 13 Desember 1957 penting bagi Indonesia karena …',
+  opts:['Menegaskan laut di antara pulau-pulau sebagai bagian wilayah Indonesia','Membentuk ASEAN','Menetapkan dasar negara','Mengakhiri Konstitusi RIS','Menetapkan politik luar negeri bebas aktif'],a:0,
+  w:['','ASEAN dibentuk tahun 1967.','Dasar negara ditetapkan 1945.','RIS berakhir tahun 1950.','Politik bebas aktif dicetuskan Hatta tahun 1948.'],
+  ex:'Deklarasi Djuanda melahirkan konsep negara kepulauan. Tanggalnya diperingati sebagai Hari Nusantara.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Gagasan politik luar negeri bebas aktif pertama kali disampaikan dalam pidato "Mendayung di Antara Dua Karang" oleh …',
+  opts:['Ir. Soekarno','Drs. Moh. Hatta','Sutan Sjahrir','H. Agus Salim','Ali Sastroamidjojo'],a:1,
+  w:['Soekarno dikenal dengan Gerakan Non-Blok dan KAA.','','Sjahrir perdana menteri pertama.','Agus Salim diplomat, bukan pencetus istilah ini.','Ali Sastroamidjojo memimpin KAA 1955.'],
+  ex:'Hatta menyampaikannya di depan BP KNIP pada 1948.'},
+ {sec:'TWK',t:'twk-integritas',q:'Anda menjadi panitia pengadaan barang, dan ternyata perusahaan milik kerabat Anda ikut tender. Sikap yang paling tepat adalah …',
+  opts:['Membantu kerabat agar menang','Menyatakan adanya konflik kepentingan dan tidak ikut menilai tender tersebut','Tetap menilai asalkan objektif','Meminta kerabat mundur dari tender','Memberi tahu kerabat perkiraan harga (HPS) agar penawarannya pas'],a:1,
+  w:['Kolusi.','','Konflik kepentingan tetap ada walau merasa objektif.','Membatasi hak usaha orang lain. Yang harus dikelola adalah posisi Anda.','Membocorkan informasi rahasia pengadaan.'],
+  ex:'Konflik kepentingan wajib diungkapkan, dan pejabat yang bersangkutan tidak ikut mengambil keputusan.'},
+ {sec:'TWK',t:'twk-integritas',q:'Saat tutup buku, Anda menemukan uang kas lebih Rp500.000 dari catatan. Sikap yang sesuai integritas adalah …',
+  opts:['Mengambilnya karena kantor tidak dirugikan','Menyimpannya untuk menutup selisih kurang di kemudian hari','Mencatatnya, melaporkan kepada atasan, dan menelusuri penyebabnya','Membaginya dengan rekan bagian keuangan','Membiarkannya tanpa dicatat'],a:2,
+  w:['Tetap mengambil uang yang bukan haknya.','Menyembunyikan selisih adalah manipulasi pembukuan.','','Penggelapan.','Tidak transparan.'],
+  ex:'Setiap selisih kas, lebih maupun kurang, wajib dicatat, dilaporkan, dan ditelusuri.'},
+ {sec:'TWK',t:'twk-belanegara',q:'Wujud bela negara yang paling tepat bagi seorang ASN dalam kehidupan sehari-hari adalah …',
+  opts:['Bekerja jujur, disiplin, dan memberi pelayanan terbaik kepada masyarakat','Mengikuti wajib militer','Menyimpan senjata untuk berjaga-jaga','Menolak bertugas di daerah terpencil','Membela atasan meski salah'],a:0,
+  w:['','Indonesia tidak menerapkan wajib militer bagi ASN.','Melanggar hukum.','Bertentangan dengan kesediaan ditempatkan di seluruh NKRI.','Loyalitas bukan membela kesalahan.'],
+  ex:'Bela negara tidak selalu fisik. Bagi ASN, wujudnya adalah kerja profesional untuk kepentingan bangsa.'},
+ {sec:'TWK',t:'twk-pancasila',q:'Berikut yang BUKAN tujuan negara sebagaimana tercantum dalam Pembukaan UUD 1945 adalah …',
+  opts:['Melindungi segenap bangsa dan seluruh tumpah darah Indonesia','Memajukan kesejahteraan umum','Mencerdaskan kehidupan bangsa','Ikut melaksanakan ketertiban dunia','Membentuk pemerintahan yang kuat dan berwibawa'],a:4,
+  w:['Tujuan negara.','Tujuan negara.','Tujuan negara.','Tujuan negara.',''],
+  ex:'Empat tujuan negara di alinea keempat: melindungi, memajukan kesejahteraan umum, mencerdaskan, dan ikut melaksanakan ketertiban dunia.'},
+ {sec:'TWK',t:'twk-bahasa',q:'Kata baku yang tepat adalah …',
+  opts:['Apotik','Sistim','Kwalitas','Nasehat','Praktik'],a:4,
+  w:['Baku: apotek.','Baku: sistem.','Baku: kualitas.','Baku: nasihat.',''],
+  ex:'Bentuk baku menurut KBBI: praktik, apotek, sistem, kualitas, nasihat.'},
+ {sec:'TWK',t:'twk-bahasa',q:'Bahasa Indonesia berkedudukan sebagai bahasa persatuan sejak … dan sebagai bahasa negara sejak …',
+  opts:['17 Agustus 1945 dan 18 Agustus 1945','20 Mei 1908 dan 17 Agustus 1945','28 Oktober 1928 dan 17 Agustus 1945','28 Oktober 1928 dan 18 Agustus 1945','28 Oktober 1928 dan 1 Juni 1945'],a:3,
+  w:['Bahasa persatuan sudah diikrarkan tahun 1928.','1908 adalah berdirinya Budi Utomo.','Proklamasi tidak menetapkan bahasa negara.','','1 Juni 1945 adalah pidato lahirnya Pancasila.'],
+  ex:'Bahasa persatuan lewat Sumpah Pemuda (28 Oktober 1928). Bahasa negara lewat Pasal 36 UUD 1945 yang disahkan 18 Agustus 1945.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Badan bentukan Jepang untuk menyelidiki persiapan kemerdekaan yang diketuai dr. K.R.T. Radjiman Wedyodiningrat adalah …',
+  opts:['BPUPKI','PPKI','KNIP','Panitia Sembilan','Putera'],a:0,
+  w:['','PPKI diketuai Soekarno.','KNIP dibentuk setelah merdeka.','Panitia Sembilan diketuai Soekarno.','Putera dipimpin Empat Serangkai.'],
+  ex:'BPUPKI (Dokuritsu Junbi Cosakai) diketuai dr. Radjiman Wedyodiningrat.'},
+ {sec:'TWK',t:'twk-uud',q:'Hak berikut termasuk hak yang tidak dapat dikurangi dalam keadaan apa pun menurut Pasal 28I ayat (1) UUD 1945 …',
+  opts:['Hak untuk hidup','Hak berserikat','Hak atas pekerjaan','Hak bertempat tinggal','Hak memperoleh informasi'],a:0,
+  w:['','Dapat dibatasi undang-undang (Pasal 28J).','Dapat dibatasi undang-undang (Pasal 28J).','Dapat dibatasi undang-undang (Pasal 28J).','Dapat dibatasi undang-undang (Pasal 28J).'],
+  ex:'Pasal 28I(1): hak hidup, tidak disiksa, kemerdekaan pikiran dan hati nurani, beragama, tidak diperbudak, diakui sebagai pribadi di hadapan hukum, dan tidak dituntut atas hukum yang berlaku surut.'},
+ /* ---------- TIU ---------- */
+ {sec:'TIU',t:'tiu-sinonim',q:'FLUKTUASI = …',opts:['Kenaikan','Penurunan','Perubahan naik turun','Kestabilan','Kemacetan'],a:2,
+  w:['Hanya satu arah.','Hanya satu arah.','','Kebalikannya.','Tidak berhubungan.'],ex:'Fluktuasi berarti gejala naik turun (harga, nilai, dan sebagainya).'},
+ {sec:'TIU',t:'tiu-sinonim',q:'MANDATARIS = …',opts:['Pemberi mandat','Penerima mandat','Pemimpin rapat','Wakil rakyat','Pengawas'],a:1,
+  w:['Kebalikannya.','','Tidak tepat.','Tidak tepat.','Tidak tepat.'],ex:'Mandataris adalah orang yang diberi mandat.'},
+ {sec:'TIU',t:'tiu-antonim',q:'FANA >< …',opts:['Sementara','Kekal','Lemah','Hilang','Nyata'],a:1,
+  w:['Sinonim.','','Tidak berhubungan.','Mirip makna.','Bukan lawan kata.'],ex:'Fana = tidak kekal. Lawannya kekal atau baka.'},
+ {sec:'TIU',t:'tiu-antonim',q:'SPORADIS >< …',opts:['Jarang','Kerap','Acak','Terpencar','Tunggal'],a:1,
+  w:['Sinonim.','','Mirip makna.','Mirip makna.','Tidak berhubungan.'],ex:'Sporadis = jarang-jarang atau tidak tentu. Lawannya kerap (sering).'},
+ {sec:'TIU',t:'tiu-analogi',q:'GURU : SEKOLAH = … : …',opts:['Petani : Cangkul','Dokter : Rumah sakit','Pilot : Penumpang','Hakim : Terdakwa','Koki : Masakan'],a:1,
+  w:['Profesi : alat.','','Profesi : orang yang dilayani.','Profesi : orang yang diadili.','Profesi : hasil kerja.'],ex:'Profesi : tempat kerjanya.'},
+ {sec:'TIU',t:'tiu-analogi',q:'KAMBING : RUMPUT = … : …',opts:['Ayam : Telur','Sapi : Susu','Lebah : Madu','Harimau : Daging','Ikan : Air'],a:3,
+  w:['Hewan : hasilnya.','Hewan : hasilnya.','Hewan : hasilnya.','','Hewan : habitatnya.'],ex:'Hewan : makanannya.'},
+ {sec:'TIU',t:'tiu-analogi',q:'KAYU : MEJA = … : …',opts:['Gunting : Kertas','Benang : Kain','Penjahit : Baju','Jarum : Benang','Air : Gelas'],a:1,
+  w:['Alat : objek.','','Pembuat : hasil.','Alat : bahan.','Isi : wadah.'],ex:'Bahan : barang yang dibuat darinya.'},
+ {sec:'TIU',t:'tiu-silogisme',q:'Semua peserta yang lulus SKD mengikuti SKB.\nDina tidak mengikuti SKB.\nKesimpulan yang tepat adalah …',
+  opts:['Dina lulus SKD','Dina tidak lulus SKD','Dina tidak mendaftar CPNS','Dina mungkin lulus SKD','Tidak dapat disimpulkan'],a:1,
+  w:['Bertentangan dengan premis.','','Tidak ada informasi soal pendaftaran.','Kesimpulannya pasti, bukan "mungkin".','Bisa disimpulkan (modus tollens).'],ex:'Lulus SKD → ikut SKB. Tidak ikut SKB → tidak lulus SKD.'},
+ {sec:'TIU',t:'tiu-silogisme',q:'Jika harga BBM naik, ongkos angkutan naik.\nJika ongkos angkutan naik, harga sayur naik.\nKesimpulan yang tepat adalah …',
+  opts:['Jika harga sayur naik, harga BBM naik','Jika harga BBM naik, harga sayur naik','Jika harga BBM tidak naik, harga sayur tidak naik','Harga sayur selalu naik','Ongkos angkutan naik karena harga sayur'],a:1,
+  w:['Membalik implikasi (konvers), tidak sah.','','Invers, tidak sah.','Tidak ada dasar.','Membalik sebab-akibat.'],ex:'Silogisme hipotetis: P→Q, Q→R, maka P→R.'},
+ {sec:'TIU',t:'tiu-silogisme',q:'Beberapa atlet adalah mahasiswa.\nSemua mahasiswa wajib mengikuti ujian.\nKesimpulan yang tepat adalah …',
+  opts:['Semua atlet wajib mengikuti ujian','Beberapa atlet wajib mengikuti ujian','Semua yang mengikuti ujian adalah atlet','Beberapa mahasiswa bukan atlet','Tidak dapat disimpulkan'],a:1,
+  w:['Terlalu luas.','','Membalik premis.','Tidak dapat dipastikan dari premis.','Bisa disimpulkan.'],ex:'Atlet yang mahasiswa pasti wajib ujian, jadi beberapa atlet wajib ujian.'},
+ {sec:'TIU',t:'tiu-analitis',q:'Andi, Budi, Citra, dan Dewi memakai baju berwarna berbeda: merah, biru, hijau, dan kuning. Andi tidak memakai merah atau biru. Budi memakai hijau. Citra tidak memakai kuning. Dewi tidak memakai biru. Siapa yang memakai baju biru?',
+  opts:['Andi','Budi','Citra','Dewi','Tidak dapat ditentukan'],a:2,
+  w:['Andi pasti kuning.','Budi hijau.','','Dewi pasti merah.','Bisa ditentukan.'],ex:'Budi hijau → Andi kuning (bukan merah/biru) → Dewi merah (bukan biru) → Citra biru.'},
+ {sec:'TIU',t:'tiu-analitis',q:'Lima buku (P, Q, R, S, T) disusun berjajar dari kiri ke kanan. T paling kiri, P paling kanan, S tepat di sebelah kiri P, dan Q berada di sebelah kiri R. Buku di posisi ketiga dari kiri adalah …',
+  opts:['P','Q','R','S','T'],a:2,
+  w:['P paling kanan.','Q di posisi kedua.','','S di posisi keempat.','T paling kiri.'],ex:'Urutannya: T – Q – R – S – P.'},
+ {sec:'TIU',t:'tiu-deret',q:'1, 2, 6, 24, 120, …',opts:['240','600','720','840','960'],a:2,
+  w:['Dikali 2.','Dikali 5.','','Salah pola.','Salah pola.'],ex:'×2, ×3, ×4, ×5, berikutnya ×6 → 720.'},
+ {sec:'TIU',t:'tiu-deret',q:'5, 7, 10, 15, 22, 33, …',opts:['44','45','46','47','48'],a:2,
+  w:['Selisih +11.','Salah pola.','','Salah pola.','Salah pola.'],ex:'Selisihnya bilangan prima: 2, 3, 5, 7, 11, berikutnya 13 → 46.'},
+ {sec:'TIU',t:'tiu-deret',q:'Z, X, U, Q, L, …',opts:['E','F','G','H','J'],a:1,
+  w:['Mundur 7.','','Mundur 5.','Mundur 4.','Salah pola.'],ex:'Z=26, X=24, U=21, Q=17, L=12. Mundur 2, 3, 4, 5, berikutnya 6 → 6 = F.'},
+ {sec:'TIU',t:'tiu-hitung',q:'0,25 × 0,4 ÷ 0,02 = …',opts:['0,5','2','5','20','50'],a:2,
+  w:['Salah letak koma.','Salah hitung.','','Salah hitung.','Salah letak koma.'],ex:'0,25 × 0,4 = 0,1. Lalu 0,1 ÷ 0,02 = 5.'},
+ {sec:'TIU',t:'tiu-hitung',q:'Jika x = 3 dan y = −2, nilai 2x² − 3xy + y² adalah …',opts:['4','22','36','40','44'],a:3,
+  w:['Salah tanda: −3xy dihitung −18.','Salah hitung.','Lupa menambah y².','','Salah hitung.'],ex:'2(9) − 3(3)(−2) + 4 = 18 + 18 + 4 = 40.'},
+ {sec:'TIU',t:'tiu-perbandingan',q:'Pada peta berskala 1 : 250.000, jarak dua kota 6 cm. Jarak sebenarnya adalah …',opts:['1,5 km','6 km','15 km','25 km','150 km'],a:2,
+  w:['Salah konversi cm ke km.','Salah hitung.','','Salah hitung.','Salah konversi cm ke km.'],ex:'6 × 250.000 = 1.500.000 cm = 15 km.'},
+ {sec:'TIU',t:'tiu-cerita',q:'Jarak kota A dan B 240 km. Andi berangkat dari A dengan kecepatan 60 km/jam dan Budi dari B dengan kecepatan 40 km/jam, pada waktu bersamaan dan saling menuju. Mereka bertemu setelah …',
+  opts:['2 jam','2 jam 20 menit','2 jam 24 menit','2 jam 40 menit','3 jam'],a:2,
+  w:['Salah hitung.','0,4 jam bukan 20 menit.','','0,4 jam bukan 40 menit.','Salah hitung.'],ex:'Kecepatan gabungan 100 km/jam. 240 ÷ 100 = 2,4 jam = 2 jam 24 menit.'},
+ {sec:'TIU',t:'tiu-cerita',q:'Harga 3 buku dan 2 pensil Rp27.000. Harga 2 buku dan 3 pensil Rp23.000. Harga 1 buku adalah …',
+  opts:['Rp3.000','Rp5.000','Rp6.000','Rp7.000','Rp8.000'],a:3,
+  w:['Itu harga pensil.','Salah hitung.','Salah hitung.','','Salah hitung.'],ex:'Jumlahkan: 5b + 5p = 50.000 → b + p = 10.000. Kurangkan: b − p = 4.000. Jadi b = 7.000.'},
+ /* ---------- TKP ---------- */
+ tk('tkp-pelayanan','Seorang warga yang datang dari jauh meminta berkasnya diproses meski persyaratannya belum lengkap. Sikap Anda …',
+  ['Menolak dan memintanya pulang tanpa penjelasan','Memproses saja karena kasihan','Menjelaskan syarat yang kurang dan memintanya kembali','Menjelaskan syarat yang kurang dan menyimpan berkas yang sudah ada','Menjelaskan syarat yang kurang, membantu mencari cara melengkapinya (misalnya dikirim menyusul bila aturan membolehkan), dan menyimpan berkas yang sudah ada'],
+  ['Tidak empati.','Melanggar prosedur.','Sesuai aturan, tapi warga harus bolak-balik.','Membantu, tapi belum mencari jalan keluar.','Taat aturan dan meringankan beban warga.'],'Pelayanan terbaik tetap sesuai aturan, tapi mencarikan jalan keluar.'),
+ tk('tkp-pelayanan','Ada warga penyandang disabilitas di antrean layanan. Sikap Anda …',
+  ['Membiarkannya mengantre seperti biasa','Memintanya menyuruh keluarga mengurus','Mempersilakannya duduk di kursi tunggu','Mendahulukan pelayanannya','Mendahulukannya sesuai ketentuan layanan prioritas dan memastikan aksesnya (tempat, bantuan pengisian) memadai'],
+  ['Mengabaikan kebutuhan khusus.','Melempar ke orang lain.','Perhatian kecil.','Tepat.','Tepat dan memastikan layanan benar-benar mudah diakses.'],'Kelompok rentan berhak atas layanan prioritas yang mudah diakses.'),
+ tk('tkp-pelayanan','Seorang warga terus meminta Anda menjelaskan ulang prosedur yang sudah dijelaskan beberapa kali. Sikap Anda …',
+  ['Menyuruhnya membaca papan informasi saja','Menjelaskan ulang dengan nada kesal','Menjelaskan ulang','Menjelaskan ulang dengan sabar dan bahasa yang lebih sederhana','Menjelaskan dengan sabar dan sederhana, memastikan ia paham, dan memberinya alur tertulis'],
+  ['Tidak melayani.','Tidak ramah.','Melayani, tapi bisa saja ia tetap tidak paham.','Sabar dan menyesuaikan cara.','Sabar, memastikan paham, dan memberi panduan.'],'Ukurannya: warga benar-benar paham.'),
+ tk('tkp-pelayanan','Layanan daring instansi Anda sering dikeluhkan warga karena membingungkan. Sikap Anda …',
+  ['Mengabaikannya karena bukan wewenang saya','Menyarankan warga datang langsung saja','Membantu warga yang mengeluh satu per satu','Mencatat keluhan yang sering muncul','Mengumpulkan keluhan, mengusulkan perbaikan alur dan panduan kepada atasan, sambil tetap membantu warga yang kesulitan'],
+  ['Tidak peduli.','Menghindari masalah.','Membantu, tapi masalahnya tetap ada.','Langkah awal.','Membantu sekarang sekaligus memperbaiki sistem.'],'Selesaikan keluhan warga sekaligus perbaiki penyebabnya.'),
+ tk('tkp-pelayanan','Setelah urusannya selesai, seorang warga memberi Anda amplop sebagai ucapan terima kasih. Sikap Anda …',
+  ['Menerimanya karena urusan sudah selesai','Menerima lalu memasukkannya ke kas kantor tanpa laporan','Menolak','Menolak dengan sopan','Menolak dengan sopan dan menjelaskan bahwa layanan tidak dipungut biaya tambahan'],
+  ['Gratifikasi.','Tetap gratifikasi dan tidak tercatat.','Benar, tapi bisa menyinggung.','Benar dan sopan.','Benar, sopan, dan mengedukasi warga.'],'Tolak gratifikasi dengan sopan dan jelaskan alasannya.'),
+ tk('tkp-jejaring','Tim Anda ditugasi bekerja sama dengan perangkat desa yang belum pernah bekerja sama dengan kantor Anda. Sikap Anda …',
+  ['Menunggu perangkat desa menghubungi lebih dulu','Berkomunikasi hanya lewat surat resmi','Mendatangi kantor desa saat ada keperluan saja','Mendatangi kantor desa untuk berkenalan dan menjelaskan program','Berkunjung untuk berkenalan, menjelaskan program, menyepakati pembagian peran, dan menjaga komunikasi rutin'],
+  ['Pasif.','Kaku.','Hubungan seadanya.','Proaktif.','Proaktif dan membangun kerja sama berkelanjutan.'],'Bangun hubungan sejak awal dan sepakati peran.'),
+ tk('tkp-jejaring','Rekan satu tim jarang hadir rapat sehingga pekerjaannya tertinggal. Sikap Anda …',
+  ['Membicarakannya dengan rekan lain','Mengerjakan bagiannya diam-diam','Melaporkannya ke ketua tim','Menanyakan kendalanya','Menanyakan kendalanya secara pribadi, menawarkan bantuan, dan menyepakati cara agar ia tetap terhubung dengan tim'],
+  ['Bergosip.','Masalah tidak selesai.','Langsung melapor tanpa bicara.','Peduli.','Peduli dan memberi solusi.'],'Dekati rekan secara pribadi sebelum membawa ke atasan.'),
+ tk('tkp-jejaring','Unit lain meminta Anda berbagi pengalaman kerja yang berhasil di unit Anda. Sikap Anda …',
+  ['Menolak karena bukan tugas saya','Mengirim dokumen tanpa penjelasan','Bersedia jika ada waktu luang','Bersedia berbagi','Bersedia berbagi, menyiapkan materi yang mudah dipahami, dan membuka diskusi lanjutan'],
+  ['Tertutup.','Setengah hati.','Kurang serius.','Terbuka.','Terbuka dan sungguh-sungguh.'],'Berbagi pengetahuan memperkuat jejaring antarunit.'),
+ tk('tkp-jejaring','Unit Anda dan unit lain saling menyalahkan atas keterlambatan program. Sikap Anda …',
+  ['Ikut menyalahkan unit lain','Diam saja','Melapor ke atasan','Mengusulkan rapat bersama','Mengusulkan rapat bersama untuk memetakan masalah, mencari solusi, dan membagi tindak lanjut tanpa saling menyalahkan'],
+  ['Memperkeruh.','Pasif.','Melempar masalah.','Inisiatif.','Inisiatif dan fokus pada solusi.'],'Fokus pada solusi bersama, bukan mencari siapa yang salah.'),
+ tk('tkp-sosbud','Rekan kerja Anda yang berbeda agama sedang merayakan hari rayanya. Sikap Anda …',
+  ['Tidak peduli','Menghindari pembicaraan tentang hari raya itu','Menghormatinya bila ia membicarakannya','Menyampaikan salam atau ucapan yang sesuai keyakinan saya','Menghormati perayaannya dan bersedia menggantikan tugasnya bila ia cuti'],
+  ['Tidak peduli.','Menjaga jarak.','Pasif.','Menghargai.','Menghargai dan mendukung secara nyata.'],'Toleransi ditunjukkan lewat penghormatan dan dukungan nyata.'),
+ tk('tkp-sosbud','Di daerah tugas, warga terbiasa datang terlambat ke pertemuan desa, padahal Anda pematerinya. Sikap Anda …',
+  ['Membatalkan pertemuan','Mengeluh di depan warga','Memulai tepat waktu walau peserta sedikit','Menunggu sambil berbincang dengan warga yang sudah datang','Memahami kebiasaan setempat, mengisi waktu dengan berbincang, lalu menyepakati jam mulai dengan tokoh masyarakat untuk pertemuan berikutnya'],
+  ['Merugikan warga yang datang.','Tidak menghargai.','Disiplin, tapi banyak warga tertinggal.','Adaptif.','Adaptif sekaligus memperbaiki ke depan.'],'Hormati kebiasaan lokal sambil mengajak perbaikan bersama.'),
+ tk('tkp-sosbud','Ada warga pendatang yang dikucilkan di lingkungan tempat tinggal Anda. Sikap Anda …',
+  ['Ikut menjauhinya','Membiarkan','Bersikap biasa saja kepadanya','Mengajaknya mengobrol','Mengajaknya berbaur, mengenalkannya kepada tetangga, dan mengajaknya ikut kegiatan warga'],
+  ['Diskriminatif.','Pasif.','Netral.','Ramah.','Aktif merangkul.'],'Rangkul perbedaan secara aktif.'),
+ tk('tkp-sosbud','Rekan dari daerah lain sering ditertawakan karena logatnya. Sikap Anda …',
+  ['Ikut menirukan logatnya','Diam saja','Tidak ikut menertawakan','Mengingatkan rekan yang menertawakan','Mengingatkan dengan sopan bahwa logat adalah kekayaan budaya, dan menunjukkan sikap menghargai di depan semua'],
+  ['Merendahkan.','Membiarkan.','Tidak ikut, tapi pasif.','Membela.','Membela dan memberi contoh.'],'Hargai keragaman bahasa dan budaya.'),
+ tk('tkp-tik','Kantor Anda mulai menerapkan tanda tangan elektronik. Sikap Anda …',
+  ['Tetap memakai tanda tangan basah','Menunggu rekan lain mencoba dulu','Mencobanya ketika diharuskan','Mempelajari dan memakainya','Mempelajari, memakainya, dan membantu rekan yang belum paham'],
+  ['Menolak perubahan.','Pasif.','Terpaksa.','Adaptif.','Adaptif dan membantu orang lain.'],'Sambut teknologi baru dan bantu penerapannya.'),
+ tk('tkp-tik','Anda perlu membawa pulang laptop kantor yang berisi data warga. Sikap Anda …',
+  ['Membawanya dan meminjamkannya ke anggota keluarga','Membawanya tanpa izin','Membawanya dengan izin','Membawanya dengan izin dan memastikan laptop terkunci kata sandi','Membawanya hanya bila diizinkan, memastikan data terkunci atau terenkripsi, dan tidak menyalinnya ke perangkat pribadi'],
+  ['Membocorkan data.','Melanggar aturan.','Sesuai aturan.','Sesuai aturan dan aman.','Sesuai aturan dan menjaga kerahasiaan data sepenuhnya.'],'Data warga adalah data pribadi yang wajib dijaga.'),
+ tk('tkp-tik','Anda menerima pesan WhatsApp mengatasnamakan atasan yang meminta transfer dana mendesak. Sikap Anda …',
+  ['Langsung mentransfer','Membalas menanyakan nomor rekening','Mengabaikannya','Mengonfirmasi langsung kepada atasan melalui nomor yang sudah dikenal','Mengonfirmasi lewat nomor resmi atasan, tidak mentransfer, dan melaporkan nomor itu agar rekan lain waspada'],
+  ['Tertipu.','Melayani penipu.','Aman, tapi orang lain bisa tertipu.','Aman.','Aman dan melindungi rekan lain.'],'Waspadai penipuan yang mencatut nama atasan.'),
+ tk('tkp-tik','Rapat koordinasi dengan daerah lain direncanakan tatap muka dan memakan biaya besar. Sikap Anda …',
+  ['Tetap tatap muka karena sudah biasa','Menunda rapat','Mengurangi peserta tatap muka','Mengusulkan rapat daring','Mengusulkan rapat daring atau hibrida, menyiapkan perangkat dan tautan, dan memastikan hasilnya terdokumentasi'],
+  ['Tidak efisien.','Program tertunda.','Hemat sedikit.','Efisien.','Efisien dan siap dijalankan.'],'Manfaatkan teknologi untuk efisiensi anggaran.'),
+ tk('tkp-tik','Data pekerjaan Anda selama ini hanya tersimpan di satu komputer. Sikap Anda …',
+  ['Membiarkannya','Menyimpan salinan di flashdisk pribadi','Mengirimnya ke email pribadi','Mencadangkannya ke penyimpanan resmi kantor','Mencadangkan rutin ke penyimpanan resmi kantor dan mengusulkan prosedur cadangan untuk unit'],
+  ['Berisiko hilang.','Berisiko bocor.','Berisiko bocor.','Aman.','Aman dan bermanfaat bagi unit.'],'Cadangkan data di tempat resmi dan biasakan prosedurnya.'),
+ tk('tkp-profesional','Ada pekerjaan yang harus selesai hari ini, tetapi jam kerja sudah habis. Sikap Anda …',
+  ['Pulang dan melanjutkannya besok tanpa memberi tahu siapa pun','Pulang dan memberi tahu atasan besok','Mengerjakan sebagian','Lembur menyelesaikannya','Menyelesaikannya (lembur sesuai ketentuan) lalu mengevaluasi jadwal kerja agar tidak terulang'],
+  ['Tidak bertanggung jawab.','Terlambat memberi kabar.','Setengah selesai.','Bertanggung jawab.','Bertanggung jawab dan belajar dari kejadian.'],'Selesaikan tanggung jawab dan perbaiki perencanaan.'),
+ tk('tkp-profesional','Anda dipromosikan dan harus memimpin rekan yang lebih senior. Sikap Anda …',
+  ['Menolak promosi','Menerima tapi menghindari mengatur rekan senior','Menerima dan memimpin seperti biasa','Menerima dan menghormati rekan senior','Menerima, menghormati pengalaman rekan senior, melibatkan mereka dalam keputusan, dan tetap tegas sesuai aturan'],
+  ['Menghindari tanggung jawab.','Tidak memimpin.','Kurang peka.','Menghargai.','Menghargai sekaligus memimpin dengan tegas.'],'Pemimpin yang baik menghargai pengalaman dan tetap tegas.'),
+ tk('tkp-profesional','Atasan memberi perintah yang menurut Anda kurang tepat secara teknis, tetapi tidak melanggar aturan. Sikap Anda …',
+  ['Mengabaikan perintah','Mengerjakan sambil mengeluh','Mengerjakan sesuai perintah','Menyampaikan pendapat kepada atasan','Menyampaikan pendapat beserta data dengan sopan, lalu melaksanakan keputusan akhir atasan'],
+  ['Tidak loyal.','Tidak profesional.','Patuh, tapi tidak memberi masukan.','Memberi masukan.','Memberi masukan berbasis data dan tetap loyal.'],'Sampaikan pendapat dengan data, lalu hormati keputusan.'),
+ tk('tkp-profesional','Anda ditawari pekerjaan sampingan yang jamnya bentrok dengan jam kantor. Sikap Anda …',
+  ['Menerima dan sering izin dari kantor','Menerima diam-diam','Menerima dan mengerjakannya saat jam istirahat','Menolak','Menolak karena bertentangan dengan kewajiban jam kerja, dan fokus pada tugas utama'],
+  ['Melanggar disiplin.','Melanggar dan tidak jujur.','Berisiko mengganggu tugas.','Tepat.','Tepat dengan alasan yang jelas.'],'Kewajiban jam kerja ASN diutamakan.'),
+ tk('tkp-profesional','Anda baru pindah ke unit baru dengan tugas yang belum Anda pahami. Sikap Anda …',
+  ['Menunggu diberi tahu','Mengerjakan semampunya tanpa bertanya','Membaca dokumen lama','Bertanya kepada rekan','Mempelajari dokumen, bertanya kepada rekan dan atasan, dan membuat catatan prosedur kerja'],
+  ['Pasif.','Berisiko salah.','Inisiatif terbatas.','Inisiatif.','Inisiatif dan sistematis.'],'Belajar cepat dengan berbagai sumber.'),
+ tk('tkp-radikal','Ada poster di sekitar kantor yang mengajak bergabung dengan kelompok penentang Pancasila. Sikap Anda …',
+  ['Membiarkannya','Memotret dan menyebarkannya di media sosial','Mencopotnya sendiri','Melapor ke petugas keamanan kantor','Melapor ke petugas keamanan dan atasan agar ditindak sesuai prosedur, tanpa ikut menyebarkan'],
+  ['Pasif.','Ikut menyebarkan.','Bertindak, tapi tanpa laporan.','Melapor.','Melapor lengkap tanpa menyebarkan.'],'Laporkan lewat jalur resmi dan jangan ikut menyebarkan.'),
+ tk('tkp-radikal','Teman kuliah mengajak Anda bergabung dengan grup diskusi daring yang membahas "negara alternatif" pengganti NKRI. Sikap Anda …',
+  ['Bergabung untuk ikut berdiskusi','Bergabung tapi hanya membaca','Menolak','Menolak dan mengingatkan teman','Menolak, mengingatkan teman tentang konsensus kebangsaan, dan melaporkan grup bila mengarah pada ajakan makar'],
+  ['Terpapar.','Tetap terpapar.','Tepat, tapi pasif.','Menolak dan peduli.','Menolak, peduli, dan bertindak bila perlu.'],'Tolak, ingatkan, dan laporkan bila mengarah ke makar.'),
+ tk('tkp-radikal','Anak tetangga menunjukkan rasa simpati pada pelaku aksi teror yang diberitakan. Sikap Anda …',
+  ['Membiarkannya','Memarahinya','Memberi tahu orang tuanya','Mengajaknya berbicara','Mengajaknya berbicara dengan tenang tentang dampak teror bagi korban, lalu berkoordinasi dengan orang tuanya'],
+  ['Pasif.','Membuatnya menutup diri.','Melibatkan keluarga.','Peduli.','Dialog dan melibatkan keluarga.'],'Dialog dengan empati dan libatkan keluarga.'),
+ tk('tkp-radikal','Dalam obrolan kantor, seorang rekan menyebut kelompok agama lain sebagai musuh. Sikap Anda …',
+  ['Mengiyakan','Diam','Mengalihkan pembicaraan','Menyampaikan ketidaksetujuan','Menyampaikan ketidaksetujuan dengan sopan, mengingatkan nilai toleransi dan kebinekaan, serta mengajaknya berdiskusi'],
+  ['Membenarkan intoleransi.','Membiarkan.','Menghindar.','Tegas.','Tegas dan mengedukasi.'],'Luruskan pandangan intoleran dengan cara yang santun.')
+];
+
+const NEW2=[
+ /* ---------- TWK ---------- */
+ {sec:'TWK',t:'twk-pancasila',q:'Pohon beringin pada perisai Garuda Pancasila melambangkan sila ke-…',
+  opts:['Pertama','Kedua','Ketiga','Keempat','Kelima'],a:2,
+  w:['Bintang.','Rantai.','','Kepala banteng.','Padi dan kapas.'],ex:'Beringin melambangkan sila ketiga: Persatuan Indonesia.'},
+ {sec:'TWK',t:'twk-uud',q:'"Perekonomian disusun sebagai usaha bersama berdasar atas asas kekeluargaan." Bunyi ini terdapat dalam UUD 1945 …',
+  opts:['Pasal 27 ayat (2)','Pasal 33 ayat (1)','Pasal 33 ayat (2)','Pasal 33 ayat (3)','Pasal 34 ayat (1)'],a:1,
+  w:['Hak atas pekerjaan dan penghidupan layak.','','Cabang produksi penting dikuasai negara.','Bumi, air, dan kekayaan alam dikuasai negara.','Fakir miskin dan anak terlantar dipelihara negara.'],ex:'Pasal 33 ayat (1) adalah dasar ekonomi kerakyatan.'},
+ {sec:'TWK',t:'twk-uud',q:'UUD 1945 mengamanatkan anggaran pendidikan sekurang-kurangnya … dari APBN dan APBD.',
+  opts:['10%','15%','20%','25%','30%'],a:2,
+  w:['Terlalu kecil.','Terlalu kecil.','','Lebih dari yang diamanatkan.','Lebih dari yang diamanatkan.'],ex:'Pasal 31 ayat (4): sekurang-kurangnya 20% dari APBN dan APBD.'},
+ {sec:'TWK',t:'twk-uud',q:'Lembaga yang berwenang menguji undang-undang terhadap UUD 1945 adalah …',
+  opts:['Mahkamah Agung','Mahkamah Konstitusi','Komisi Yudisial','DPR','MPR'],a:1,
+  w:['MA menguji peraturan di bawah undang-undang terhadap undang-undang.','','KY menjaga kehormatan hakim dan mengusulkan calon hakim agung.','DPR membentuk undang-undang.','MPR mengubah dan menetapkan UUD.'],ex:'Pasal 24C ayat (1): MK menguji undang-undang terhadap UUD.'},
+ {sec:'TWK',t:'twk-uud',q:'Asas pemilihan umum menurut Pasal 22E ayat (1) UUD 1945 adalah …',
+  opts:['Langsung, umum, bebas, rahasia, jujur, dan adil','Terbuka, adil, dan merata','Langsung, terbuka, dan jujur','Umum, bebas, dan terbuka','Demokratis, jujur, dan transparan'],a:0,
+  w:['','Bukan rumusan konstitusi.','Bukan rumusan konstitusi.','Bukan rumusan konstitusi.','Bukan rumusan konstitusi.'],ex:'Luber jurdil, dilaksanakan setiap lima tahun sekali.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Tujuan golongan muda membawa Soekarno dan Hatta ke Rengasdengklok pada 16 Agustus 1945 adalah …',
+  opts:['Menjauhkan mereka dari pengaruh Jepang agar segera memproklamasikan kemerdekaan','Menyusun UUD','Membentuk PPKI','Berunding dengan Sekutu','Membacakan Proklamasi di sana'],a:0,
+  w:['','UUD disusun BPUPKI.','PPKI dibentuk Jepang pada 7 Agustus.','Tidak ada perundingan dengan Sekutu.','Proklamasi dibacakan di Jakarta.'],ex:'Golongan muda ingin Proklamasi segera dilakukan tanpa campur tangan Jepang.'},
+ {sec:'TWK',t:'twk-sejarah',q:'Naskah Proklamasi yang ditulis tangan Soekarno kemudian diketik oleh …',
+  opts:['Sayuti Melik','Sukarni','B.M. Diah','Chaerul Saleh','Fatmawati'],a:0,
+  w:['','Sukarni mengusulkan naskah ditandatangani atas nama bangsa.','B.M. Diah menyimpan naskah tulisan tangan.','Chaerul Saleh tokoh golongan muda.','Fatmawati menjahit bendera pusaka.'],ex:'Sayuti Melik mengetik naskah dengan beberapa perubahan kata.'},
+ {sec:'TWK',t:'twk-pancasila',q:'Perubahan rumusan sila pertama Piagam Jakarta menjadi "Ketuhanan Yang Maha Esa" pada 18 Agustus 1945 dilakukan demi …',
+  opts:['Menjaga persatuan seluruh bangsa yang majemuk','Memenuhi permintaan Jepang','Menghindari tekanan Sekutu','Menyesuaikan dengan konstitusi Belanda','Mempercepat pembentukan BPUPKI'],a:0,
+  w:['','Jepang tidak terlibat dalam perubahan ini.','Bukan alasannya.','Tidak berhubungan.','BPUPKI sudah dibubarkan.'],ex:'Perubahan ini menunjukkan sikap mendahulukan persatuan bangsa.'},
+ {sec:'TWK',t:'twk-uud',q:'Sistem pemerintahan Indonesia menurut UUD 1945 hasil amandemen adalah …',
+  opts:['Presidensial','Parlementer','Semi-presidensial','Monarki konstitusional','Federal'],a:0,
+  w:['','Pernah berlaku 1949–1959, tidak lagi.','Tidak dianut.','Indonesia republik.','Federal adalah bentuk negara, bukan sistem pemerintahan.'],ex:'Presiden adalah kepala negara sekaligus kepala pemerintahan, dan menteri bertanggung jawab kepada Presiden.'},
+ {sec:'TWK',t:'twk-pancasila',q:'Pancasila sebagai ideologi terbuka berarti …',
+  opts:['Nilai dasarnya tetap, tetapi penjabarannya dapat menyesuaikan perkembangan zaman','Dapat diganti dengan ideologi lain','Terbuka terhadap semua ideologi tanpa batas','Isinya dapat diubah oleh MPR','Hanya berlaku bagi generasi 1945'],a:0,
+  w:['','Pancasila tidak dapat diganti.','Keterbukaan tetap dibatasi nilai dasarnya.','Nilai dasarnya tidak diubah.','Berlaku sepanjang masa.'],ex:'Nilai dasar tetap. Nilai instrumental dan praksisnya bisa berkembang.'},
+ {sec:'TWK',t:'twk-integritas',q:'Atasan meminta Anda menandatangani daftar hadir rapat yang tidak pernah diadakan agar anggaran bisa dicairkan. Sikap yang paling tepat adalah …',
+  opts:['Menandatanganinya karena perintah atasan','Menolak dengan sopan, menjelaskan bahwa itu pemalsuan dokumen, dan melapor lewat saluran pengaduan bila tetap dipaksakan','Menandatanganinya dengan catatan','Meminta bagian dari anggaran','Menandatangani lalu melapor diam-diam'],a:1,
+  w:['Perintah melanggar hukum tidak wajib dipatuhi.','','Tetap ikut memalsukan.','Ikut korupsi.','Tetap ikut memalsukan dokumen.'],ex:'Menolak perintah yang melanggar hukum adalah bagian dari integritas.'},
+ {sec:'TWK',t:'twk-asn',q:'Memakai mobil dinas untuk liburan keluarga bertentangan dengan nilai dasar ASN BerAKHLAK, yaitu …',
+  opts:['Akuntabel','Harmonis','Adaptif','Kolaboratif','Kompeten'],a:0,
+  w:['','Harmonis tentang saling menghargai.','Adaptif tentang menyesuaikan diri dengan perubahan.','Kolaboratif tentang kerja sama.','Kompeten tentang kemampuan.'],ex:'Akuntabel mencakup memakai barang milik negara secara bertanggung jawab, efektif, dan efisien.'},
+ {sec:'TWK',t:'twk-belanegara',q:'Sistem pertahanan negara Indonesia bersifat semesta, artinya …',
+  opts:['Melibatkan seluruh warga negara, wilayah, dan sumber daya nasional','Hanya dilakukan TNI','Hanya berlaku saat perang','Dilakukan bersama negara lain','Hanya dilakukan di wilayah perbatasan'],a:0,
+  w:['','TNI komponen utama, tapi bukan satu-satunya.','Pertahanan berlaku setiap saat.','Pertahanan adalah urusan bangsa sendiri.','Mencakup seluruh wilayah.'],ex:'Sistem pertahanan semesta (UU 3/2002) melibatkan seluruh rakyat dan sumber daya.'},
+ {sec:'TWK',t:'twk-belanegara',q:'Sikap yang mencerminkan Bhinneka Tunggal Ika dalam kehidupan kampus adalah …',
+  opts:['Berteman dengan semua mahasiswa tanpa membedakan suku dan agama','Membentuk kelompok belajar khusus satu daerah','Memilih ketua himpunan dari suku mayoritas','Menolak dosen dari daerah lain','Hanya memakai bahasa daerah di kelas'],a:0,
+  w:['','Eksklusif.','Diskriminatif.','Diskriminatif.','Mengabaikan bahasa persatuan.'],ex:'Persatuan dalam keberagaman.'},
+ {sec:'TWK',t:'twk-bahasa',q:'Penulisan kata serapan yang baku adalah …',
+  opts:['Analisa','Analisis','Ijin','Resiko','Sekedar'],a:1,
+  w:['Baku: analisis.','','Baku: izin.','Baku: risiko.','Baku: sekadar.'],ex:'Bentuk baku: analisis, izin, risiko, sekadar.'},
+ {sec:'TWK',t:'twk-bahasa',q:'Penggunaan tanda baca yang tepat terdapat pada kalimat …',
+  opts:['Ibu membeli: sayur, telur, dan ikan.','Ibu membeli sayur, telur, dan ikan.','Ibu membeli sayur telur, dan ikan.','Ibu, membeli sayur, telur dan ikan.','Ibu membeli sayur; telur; dan ikan.'],a:1,
+  w:['Titik dua tidak dipakai bila perincian melengkapi predikat.','','Koma hilang di antara unsur perincian.','Subjek dan predikat tidak dipisah koma.','Titik koma tidak tepat untuk perincian sederhana.'],ex:'Perincian dipisah koma, termasuk sebelum "dan".'},
+ {sec:'TWK',t:'twk-sejarah',q:'Semboyan "Ing ngarsa sung tuladha, ing madya mangun karsa, tut wuri handayani" diperkenalkan oleh …',
+  opts:['Ki Hajar Dewantara','R.A. Kartini','dr. Wahidin Sudirohusodo','H.O.S. Tjokroaminoto','Dewi Sartika'],a:0,
+  w:['','Kartini tokoh emansipasi perempuan.','Wahidin penggagas Budi Utomo.','Tjokroaminoto tokoh Sarekat Islam.','Dewi Sartika pendiri sekolah perempuan di Bandung.'],ex:'Ki Hajar Dewantara, pendiri Taman Siswa. "Tut wuri handayani" menjadi semboyan pendidikan nasional.'},
+ {sec:'TWK',t:'twk-hukum',q:'Dalam hal ihwal kegentingan yang memaksa, Presiden berhak menetapkan …',
+  opts:['Peraturan Pemerintah Pengganti Undang-Undang','Peraturan Pemerintah','Peraturan Presiden','Keputusan Presiden','Undang-Undang'],a:0,
+  w:['','PP untuk menjalankan undang-undang.','Perpres untuk menjalankan perintah peraturan di atasnya.','Keppres bersifat penetapan.','UU dibentuk bersama DPR.'],ex:'Pasal 22 UUD 1945. Perppu harus mendapat persetujuan DPR pada persidangan berikutnya.'},
+ /* ---------- TIU ---------- */
+ {sec:'TIU',t:'tiu-sinonim',q:'EPILOG = …',opts:['Pembuka','Penutup','Inti cerita','Sisipan','Ringkasan'],a:1,
+  w:['Itu prolog.','','Tidak tepat.','Tidak tepat.','Tidak tepat.'],ex:'Epilog adalah bagian penutup.'},
+ {sec:'TIU',t:'tiu-sinonim',q:'INSOMNIA = …',opts:['Sulit tidur','Mudah lelah','Sakit kepala','Hilang ingatan','Takut gelap'],a:0,
+  w:['','Itu fatigue.','Itu migrain/sefalgia.','Itu amnesia.','Itu niktofobia.'],ex:'Insomnia berarti gangguan sulit tidur.'},
+ {sec:'TIU',t:'tiu-antonim',q:'ABSTRAK >< …',opts:['Semu','Konkret','Rumit','Maya','Khayal'],a:1,
+  w:['Sinonim.','','Tidak berhubungan.','Sinonim.','Sinonim.'],ex:'Abstrak = tidak berwujud. Lawannya konkret.'},
+ {sec:'TIU',t:'tiu-antonim',q:'DEFISIT >< …',opts:['Kekurangan','Surplus','Utang','Rugi','Impas'],a:1,
+  w:['Sinonim.','','Tidak tepat.','Mirip makna.','Impas berarti seimbang, bukan lawan.'],ex:'Defisit = kekurangan. Lawannya surplus (kelebihan).'},
+ {sec:'TIU',t:'tiu-analogi',q:'MATA : MELIHAT = … : …',opts:['Hidung : Bau','Telinga : Mendengar','Tangan : Jari','Kaki : Sepatu','Mulut : Gigi'],a:1,
+  w:['Organ : objek yang dicium.','','Organ : bagiannya.','Organ : pelindungnya.','Organ : bagiannya.'],ex:'Indra : fungsinya.'},
+ {sec:'TIU',t:'tiu-analogi',q:'SEMUT : SERANGGA = … : …',opts:['Paus : Mamalia','Ikan : Air','Kelelawar : Burung','Ular : Kaki','Katak : Reptil'],a:0,
+  w:['','Hewan : habitat.','Kelelawar mamalia, bukan burung.','Tidak berhubungan.','Katak amfibi, bukan reptil.'],ex:'Hewan : golongannya.'},
+ {sec:'TIU',t:'tiu-analogi',q:'LAPAR : MAKAN = … : …',opts:['Haus : Minum','Lelah : Kerja','Kenyang : Makan','Sakit : Dokter','Kantuk : Bangun'],a:0,
+  w:['','Kerja justru menimbulkan lelah.','Kebalikan.','Keadaan : orang.','Bangun tidak menghilangkan kantuk.'],ex:'Keadaan : tindakan untuk mengatasinya.'},
+ {sec:'TIU',t:'tiu-silogisme',q:'Semua bunga mawar berduri.\nSebagian tanaman di taman itu adalah mawar.\nKesimpulan yang tepat adalah …',
+  opts:['Semua tanaman di taman itu berduri','Sebagian tanaman di taman itu berduri','Semua tanaman berduri adalah mawar','Tidak ada tanaman berduri di taman itu','Tidak dapat disimpulkan'],a:1,
+  w:['Terlalu luas.','','Membalik premis.','Bertentangan.','Bisa disimpulkan.'],ex:'Tanaman yang mawar pasti berduri.'},
+ {sec:'TIU',t:'tiu-silogisme',q:'Andi pergi ke Semarang atau ke Solo.\nAndi tidak pergi ke Semarang.\nKesimpulan yang tepat adalah …',
+  opts:['Andi pergi ke Solo','Andi tidak pergi ke mana pun','Andi pergi ke Semarang dan Solo','Andi mungkin ke Solo','Tidak dapat disimpulkan'],a:0,
+  w:['','Bertentangan dengan premis.','Bertentangan.','Kesimpulannya pasti.','Bisa disimpulkan.'],ex:'Silogisme disjungtif: P atau Q; bukan P, maka Q.'},
+ {sec:'TIU',t:'tiu-silogisme',q:'Tidak ada pegawai malas yang mendapat promosi.\nSebagian pegawai bagian umum mendapat promosi.\nKesimpulan yang tepat adalah …',
+  opts:['Semua pegawai bagian umum tidak malas','Sebagian pegawai bagian umum tidak malas','Sebagian pegawai bagian umum malas','Pegawai bagian umum tidak mendapat promosi','Tidak dapat disimpulkan'],a:1,
+  w:['Terlalu luas.','','Tidak dapat dipastikan.','Bertentangan.','Bisa disimpulkan.'],ex:'Yang mendapat promosi pasti tidak malas.'},
+ {sec:'TIU',t:'tiu-analitis',q:'Lima rumah berjajar bernomor 1–5. Rumah Pak Ali nomor 2. Rumah Bu Sri tepat di sebelah kanan rumah Pak Budi. Rumah Pak Candra di salah satu ujung. Rumah Bu Dewi tidak bersebelahan dengan rumah Pak Ali. Rumah nomor 4 milik …',
+  opts:['Pak Ali','Pak Budi','Pak Candra','Bu Dewi','Bu Sri'],a:4,
+  w:['Nomor 2.','Nomor 3.','Nomor 1.','Nomor 5.',''],ex:'Dewi hanya bisa di 4 atau 5. Jika Candra di 5, Budi–Sri tidak bisa berdampingan. Jadi Candra 1, Ali 2, Budi 3, Sri 4, Dewi 5.'},
+ {sec:'TIU',t:'tiu-analitis',q:'X, Y, dan Z memilih jurusan berbeda: PWK, Arsitektur, dan Teknik Sipil. X tidak memilih Teknik Sipil. Y tidak memilih PWK maupun Teknik Sipil. Jurusan Z adalah …',
+  opts:['PWK','Arsitektur','Teknik Sipil','PWK atau Teknik Sipil','Tidak dapat ditentukan'],a:2,
+  w:['PWK milik X.','Arsitektur milik Y.','','Bisa dipastikan.','Bisa ditentukan.'],ex:'Y = Arsitektur. X bukan Sipil, jadi X = PWK. Z = Teknik Sipil.'},
+ {sec:'TIU',t:'tiu-deret',q:'7, 14, 12, 24, 22, 44, …',opts:['40','42','46','66','88'],a:1,
+  w:['Salah pola.','','Salah pola.','Salah pola.','Dikali 2, padahal gilirannya dikurang 2.'],ex:'×2, −2 bergantian. 44 − 2 = 42.'},
+ {sec:'TIU',t:'tiu-deret',q:'1, 1, 2, 3, 5, 8, 13, …',opts:['18','19','20','21','26'],a:3,
+  w:['Salah pola.','Salah pola.','Salah pola.','','Dikali 2.'],ex:'Fibonacci: dua suku sebelumnya dijumlahkan. 8 + 13 = 21.'},
+ {sec:'TIU',t:'tiu-deret',q:'100, 95, 85, 70, 50, …',opts:['20','25','30','35','40'],a:1,
+  w:['Dikurang 30.','','Dikurang 20 lagi.','Salah pola.','Salah pola.'],ex:'Dikurang 5, 10, 15, 20, berikutnya 25 → 25.'},
+ {sec:'TIU',t:'tiu-hitung',q:'15% dari 3/5 dari 400 adalah …',opts:['24','36','40','60','90'],a:1,
+  w:['Salah hitung.','','Salah hitung.','Itu 15% dari 400.','Salah hitung.'],ex:'3/5 × 400 = 240. 15% × 240 = 36.'},
+ {sec:'TIU',t:'tiu-hitung',q:'2.024 × 25 = …',opts:['48.600','50.400','50.600','50.800','51.600'],a:2,
+  w:['Salah hitung.','Salah hitung.','','Salah hitung.','Salah hitung.'],ex:'Trik: × 25 = × 100 ÷ 4. 202.400 ÷ 4 = 50.600.'},
+ {sec:'TIU',t:'tiu-perbandingan',q:'Harga sebuah barang setelah diskon 20% adalah Rp96.000. Harga awalnya adalah …',
+  opts:['Rp112.000','Rp115.200','Rp116.000','Rp120.000','Rp124.000'],a:3,
+  w:['Salah hitung.','Itu Rp96.000 × 120%. Diskon dihitung dari harga awal, bukan dari harga akhir.','Salah hitung.','','Salah hitung.'],ex:'Harga akhir = 80% harga awal. 96.000 ÷ 0,8 = 120.000.'},
+ {sec:'TIU',t:'tiu-cerita',q:'Tim harus mendigitasi 1.200 bangunan dengan kecepatan 150 bangunan/hari. Setelah 4 hari, dua anggota keluar sehingga kecepatan turun menjadi 100 bangunan/hari. Total waktu penyelesaian adalah …',
+  opts:['8 hari','9 hari','10 hari','11 hari','12 hari'],a:2,
+  w:['Jika kecepatan tetap 150.','Salah hitung.','','Salah hitung.','Jika kecepatan 100 dari awal.'],ex:'4 hari × 150 = 600. Sisa 600 ÷ 100 = 6 hari. Total 10 hari.'},
+ {sec:'TIU',t:'tiu-cerita',q:'Rata-rata usia 4 orang adalah 25 tahun. Jika salah satunya berusia 31 tahun, rata-rata usia 3 orang lainnya adalah …',
+  opts:['21 tahun','22 tahun','23 tahun','24 tahun','25 tahun'],a:2,
+  w:['Salah hitung.','Salah hitung.','','Salah hitung.','Rata-rata awal.'],ex:'Jumlah 4 × 25 = 100. (100 − 31) ÷ 3 = 23.'},
+ /* ---------- TKP ---------- */
+ tk('tkp-pelayanan','Seorang warga marah karena persyaratan di website berbeda dengan di loket. Sikap Anda …',
+  ['Mengatakan website bukan urusan loket','Meminta warga mengikuti persyaratan loket tanpa penjelasan','Meminta maaf dan menjelaskan persyaratan yang berlaku','Meminta maaf, menjelaskan, dan membantu warga melengkapi persyaratan','Meminta maaf, membantu warga melengkapi persyaratan, dan melaporkan perbedaan informasi agar website segera diperbarui'],
+  ['Melempar tanggung jawab.','Tidak empati.','Sopan, tapi belum membantu.','Membantu.','Membantu dan memperbaiki sumber masalah.'],'Selesaikan kebutuhan warga dan perbaiki penyebabnya.'),
+ tk('tkp-pelayanan','Saat jam istirahat, seorang warga datang, dan petugas lain sedang tidak ada. Sikap Anda …',
+  ['Memintanya kembali setelah istirahat dengan ketus','Membiarkannya menunggu tanpa penjelasan','Memberi tahu jam layanan dibuka kembali','Menanyakan keperluannya dan memberi tahu jam layanan','Menanyakan keperluannya, melayani bila memungkinkan, atau memastikan ia dilayani pertama setelah istirahat'],
+  ['Tidak ramah.','Tidak peduli.','Informatif.','Ramah dan informatif.','Ramah dan memastikan warga terlayani.'],'Tetap ramah dan pastikan warga terlayani.'),
+ tk('tkp-pelayanan','Seorang warga meminta dokumen layanannya dikirim lewat WhatsApp pribadi Anda agar cepat. Sikap Anda …',
+  ['Mengirim semua dokumen, termasuk data warga lain','Mengirim dari nomor pribadi','Menolak tanpa penjelasan','Menjelaskan bahwa dokumen hanya dikirim melalui kanal resmi','Menjelaskan kanal resmi, membantunya mengaksesnya, dan memastikan dokumennya segera terkirim'],
+  ['Membocorkan data.','Melanggar prosedur.','Tidak membantu.','Sesuai aturan.','Sesuai aturan dan membantu.'],'Pakai kanal resmi dan bantu warga mengaksesnya.'),
+ tk('tkp-pelayanan','Banyak warga lansia tidak bisa memakai sistem antrean daring. Sikap Anda …',
+  ['Mewajibkan semua warga memakai sistem daring','Membiarkan lansia mengantre paling akhir','Membantu lansia satu per satu','Menyediakan jalur antrean manual','Mengusulkan jalur manual untuk lansia sekaligus pendampingan agar mereka bisa belajar memakai layanan daring'],
+  ['Tidak inklusif.','Diskriminatif.','Membantu, tapi sementara.','Inklusif.','Inklusif dan berkelanjutan.'],'Layanan harus bisa diakses semua kelompok.'),
+ tk('tkp-pelayanan','Survei kepuasan menunjukkan layanan unit Anda dinilai lambat. Sikap Anda …',
+  ['Menganggap survei tidak akurat','Menyalahkan kurangnya pegawai','Bekerja lebih cepat','Mencari penyebab layanan lambat','Mencari penyebab, mengusulkan perbaikan alur, dan memantau hasilnya di survei berikutnya'],
+  ['Menolak masukan.','Mencari kambing hitam.','Usaha individu.','Analitis.','Analitis dan berkelanjutan.'],'Jadikan survei bahan perbaikan.'),
+ tk('tkp-jejaring','Di sebuah acara resmi, Anda bertemu pejabat instansi lain yang dapat mendukung program kantor. Sikap Anda …',
+  ['Tidak menyapa karena tidak kenal','Menyapa sekadarnya','Berkenalan','Berkenalan dan bertukar kontak','Berkenalan, bertukar kontak, memperkenalkan program kantor, dan menindaklanjutinya lewat jalur resmi'],
+  ['Melewatkan kesempatan.','Minim.','Awal yang baik.','Membangun jejaring.','Membangun jejaring dan menindaklanjutinya.'],'Manfaatkan kesempatan untuk membangun kerja sama resmi.'),
+ tk('tkp-jejaring','Rekan satu tim lebih suka bekerja sendiri dan jarang berbagi informasi. Sikap Anda …',
+  ['Membiarkannya','Mengeluhkannya ke rekan lain','Melapor ke atasan','Mengajaknya berdiskusi','Mengajaknya berdiskusi, menunjukkan manfaat berbagi informasi, dan menyepakati cara koordinasi tim'],
+  ['Pasif.','Bergosip.','Melempar masalah.','Inisiatif.','Inisiatif dan solutif.'],'Bangun keterbukaan lewat dialog.'),
+ tk('tkp-jejaring','Program Anda membutuhkan dukungan komunitas lokal seperti karang taruna dan PKK. Sikap Anda …',
+  ['Menjalankan program sendiri tanpa komunitas','Menginformasikan program lewat surat','Mengundang ketua komunitas ke kantor','Mendatangi komunitas untuk menjelaskan program','Mendatangi komunitas, mendengar masukan mereka, dan melibatkan mereka dalam pelaksanaan'],
+  ['Tidak kolaboratif.','Satu arah.','Kurang proaktif.','Proaktif.','Proaktif dan partisipatif.'],'Libatkan masyarakat sejak awal.'),
+ tk('tkp-jejaring','Anda tidak cocok secara pribadi dengan seorang rekan, tetapi harus bekerja sama dengannya. Sikap Anda …',
+  ['Menolak bekerja sama','Bekerja sama seminimal mungkin','Bekerja sama lewat perantara rekan lain','Bekerja sama secara profesional','Bekerja sama secara profesional, fokus pada tujuan, dan berusaha membangun komunikasi yang lebih baik'],
+  ['Tidak profesional.','Setengah hati.','Menghindar.','Profesional.','Profesional dan memperbaiki hubungan.'],'Pisahkan urusan pribadi dari pekerjaan.'),
+ tk('tkp-sosbud','Warga desa tempat Anda bertugas mengundang Anda ke hajatan adat. Sikap Anda …',
+  ['Tidak datang karena bukan budaya saya','Tidak datang tanpa kabar','Menitipkan amplop','Datang sebentar','Datang, mengikuti tata cara yang berlaku, dan memanfaatkannya untuk mempererat hubungan dengan warga'],
+  ['Tidak menghargai.','Tidak sopan.','Menghargai, tapi tidak berbaur.','Berbaur.','Berbaur dan menghormati adat.'],'Hadir dan hormati adat setempat.'),
+ tk('tkp-sosbud','Rekan dari daerah lain kesulitan memahami istilah-istilah lokal. Sikap Anda …',
+  ['Menertawakannya','Membiarkannya','Menjelaskan bila ditanya','Menjelaskan istilah yang ia temui','Menjelaskan dengan sabar dan mengenalkan budaya lokal agar ia mudah beradaptasi'],
+  ['Merendahkan.','Pasif.','Reaktif.','Membantu.','Membantu dan merangkul.'],'Bantu rekan beradaptasi.'),
+ tk('tkp-sosbud','Dalam pemilihan ketua tim, ada yang mengusulkan agar ketua berasal dari suku mayoritas. Sikap Anda …',
+  ['Setuju','Diam','Tidak ikut memilih','Menyampaikan bahwa usulan itu tidak tepat','Menyampaikan dengan sopan bahwa pemilihan harus berdasarkan kemampuan, dan mengusulkan kriteria yang objektif'],
+  ['Diskriminatif.','Membiarkan.','Menghindar.','Tegas.','Tegas dan solutif.'],'Pilih berdasarkan kemampuan, bukan latar belakang.'),
+ tk('tkp-sosbud','Warga menolak sebuah program karena dianggap bertentangan dengan kebiasaan setempat. Sikap Anda …',
+  ['Memaksakan program','Membatalkan program','Menunda program','Berdialog dengan warga','Berdialog dengan tokoh adat dan warga, lalu menyesuaikan pelaksanaan dengan kearifan lokal tanpa mengubah tujuannya'],
+  ['Memicu konflik.','Menyerah.','Menghindar.','Terbuka.','Terbuka dan solutif.'],'Hargai kearifan lokal dan cari titik temu.'),
+ tk('tkp-tik','Atasan meminta laporan disajikan sebagai infografis, padahal Anda belum pernah membuatnya. Sikap Anda …',
+  ['Menolak','Meminta rekan membuatkan','Membuatnya seadanya dalam bentuk tabel','Belajar dari tutorial','Belajar dari tutorial atau rekan, membuat infografis yang jelas, dan meminta masukan sebelum diserahkan'],
+  ['Menolak tugas.','Melempar tugas.','Tidak sesuai permintaan.','Mau belajar.','Mau belajar dan menjaga kualitas.'],'Kuasai alat baru demi hasil kerja yang lebih baik.'),
+ tk('tkp-tik','Ada aplikasi tidak resmi yang menjanjikan pengolahan data lebih cepat, tetapi meminta akses ke data kantor. Sikap Anda …',
+  ['Langsung memakainya','Mencobanya dengan data kantor','Tidak memakainya','Menanyakannya ke tim TI','Tidak mengunggah data kantor, berkonsultasi dengan tim TI, dan memakai aplikasi resmi yang tersedia'],
+  ['Berisiko kebocoran data.','Berisiko kebocoran data.','Aman.','Aman dan berkonsultasi.','Aman, berkonsultasi, dan tetap produktif.'],'Utamakan keamanan data.'),
+ tk('tkp-tik','Banyak rekan senior kesulitan memakai sistem presensi digital. Sikap Anda …',
+  ['Menertawakan','Membiarkan','Membantu bila diminta','Membantu rekan yang kesulitan','Membantu, membuat panduan singkat, dan menawarkan sesi belajar bersama'],
+  ['Tidak menghargai.','Pasif.','Reaktif.','Peduli.','Peduli dan berdampak luas.'],'Bantu rekan beradaptasi dengan teknologi.'),
+ tk('tkp-tik','Akun media sosial kantor yang Anda kelola mendapat komentar kasar dari warga. Sikap Anda …',
+  ['Membalas dengan kasar','Menghapus semua komentar kritik','Mengabaikannya','Membalas dengan sopan','Membalas dengan sopan, menanggapi pokok keluhannya, dan meneruskannya ke unit terkait'],
+  ['Tidak profesional.','Menutup kritik.','Pasif.','Profesional.','Profesional dan menindaklanjuti.'],'Tanggapi kritik dengan sopan dan tindak lanjuti.'),
+ tk('tkp-tik','Komputer kantor terkena virus dan file penting terkunci. Sikap Anda …',
+  ['Membayar tebusan sendiri','Tetap memakai komputer itu','Mematikan komputer','Melapor ke tim TI','Memutus koneksi jaringan, melapor ke tim TI, dan memakai cadangan data agar pekerjaan tetap berjalan'],
+  ['Mendukung kejahatan.','Virus bisa menyebar.','Tindakan sebagian.','Tepat.','Tepat, cepat, dan pekerjaan tetap jalan.'],'Isolasi, laporkan, dan pakai cadangan data.'),
+ tk('tkp-profesional','Anda menyelesaikan tugas lebih cepat dari jadwal. Sikap Anda …',
+  ['Bersantai sampai jam pulang','Pulang lebih awal','Menunggu tugas berikutnya','Menawarkan bantuan kepada rekan','Memeriksa ulang hasil kerja, melapor ke atasan, dan menawarkan bantuan atau mengerjakan tugas berikutnya'],
+  ['Membuang waktu.','Melanggar jam kerja.','Pasif.','Kooperatif.','Teliti, komunikatif, dan produktif.'],'Gunakan waktu kerja secara produktif.'),
+ tk('tkp-profesional','Anda tidak setuju dengan keputusan rapat yang sudah disepakati. Sikap Anda …',
+  ['Tidak menjalankannya','Menjalankannya setengah hati','Menjalankannya','Menjalankannya dan menyampaikan catatan','Menjalankan keputusan dengan sungguh-sungguh dan menyampaikan masukan lewat forum yang tepat untuk evaluasi'],
+  ['Tidak loyal.','Tidak profesional.','Patuh.','Patuh dan memberi masukan.','Patuh, sungguh-sungguh, dan memberi masukan di tempat yang tepat.'],'Hormati keputusan bersama.'),
+ tk('tkp-profesional','Anda melihat rekan memakai jam kerja untuk urusan pribadi dalam waktu lama. Sikap Anda …',
+  ['Ikut melakukannya','Membicarakannya dengan rekan lain','Membiarkannya','Mengingatkannya','Mengingatkannya secara pribadi, dan melapor ke atasan bila terus berulang dan mengganggu pekerjaan'],
+  ['Ikut melanggar.','Bergosip.','Pasif.','Peduli.','Peduli dan tegas bila perlu.'],'Ingatkan dulu secara pribadi.'),
+ tk('tkp-profesional','Anda diminta mendadak menjadi pemateri rapat karena rekan berhalangan. Sikap Anda …',
+  ['Menolak','Menerima tapi tidak bersiap','Menerima dan membaca materi rekan saat presentasi','Menerima dan mempelajari materi secara singkat','Menerima, mempelajari materi, berkoordinasi dengan rekan untuk poin penting, dan menyampaikannya dengan percaya diri'],
+  ['Tidak siap membantu.','Tidak profesional.','Seadanya.','Bertanggung jawab.','Bertanggung jawab dan terkoordinasi.'],'Siap mengambil peran dengan persiapan.'),
+ tk('tkp-profesional','Atasan menawari Anda pelatihan lanjutan di luar kota karena kinerja Anda bagus. Sikap Anda …',
+  ['Menolak karena malas','Menerima demi uang perjalanan dinas','Menerima','Menerima dan mengikutinya dengan serius','Menerima, mengikutinya dengan serius, dan membagikan ilmunya kepada rekan setelah kembali'],
+  ['Menolak pengembangan diri.','Motivasi keliru.','Menerima.','Serius.','Serius dan berbagi.'],'Kembangkan diri dan tularkan ilmunya.'),
+ tk('tkp-radikal','Beredar ajakan di media sosial untuk tidak menghormati bendera Merah Putih. Sikap Anda …',
+  ['Ikut menyebarkannya','Menyukai unggahannya','Mengabaikannya','Memberi komentar penjelasan','Tidak menyebarkan, memberi penjelasan santun bahwa hormat bendera adalah penghormatan kepada negara, dan melaporkan konten provokatif'],
+  ['Ikut menyebarkan.','Mendukung.','Pasif.','Meluruskan.','Meluruskan dan melapor.'],'Luruskan dengan santun dan laporkan konten provokatif.'),
+ tk('tkp-radikal','Rekan kerja membagikan brosur yang menyerukan penggantian sistem negara dengan kekerasan. Sikap Anda …',
+  ['Membaca dan ikut menyebarkannya','Menyimpan brosurnya','Menolak menerima brosur','Menolak dan mengingatkan rekan','Menolak, mengingatkan rekan, dan melapor ke atasan atau pihak berwenang'],
+  ['Menyebarkan.','Berisiko.','Menolak.','Menolak dan peduli.','Menolak, peduli, dan melapor.'],'Ajakan kekerasan harus dilaporkan.'),
+ tk('tkp-radikal','Anda diundang ke diskusi publik tentang bahaya radikalisme di kampus. Sikap Anda …',
+  ['Tidak peduli','Datang hanya untuk presensi','Datang dan mendengarkan','Datang dan aktif bertanya','Datang, aktif berdiskusi, dan membagikan materinya kepada keluarga atau rekan'],
+  ['Tidak peduli.','Formalitas.','Pasif.','Aktif.','Aktif dan menyebarkan pemahaman.'],'Perkuat pemahaman dan sebarkan.'),
+ tk('tkp-radikal','Terjadi perusakan tempat ibadah di lingkungan Anda. Sikap Anda …',
+  ['Ikut menonton dan merekam untuk disebar','Menyebarkan video tanpa konteks','Menghindari lokasi','Melapor ke polisi','Melapor ke aparat, tidak menyebarkan konten provokatif, dan mendukung pemulihan kerukunan bersama tokoh masyarakat'],
+  ['Memperkeruh.','Memicu provokasi.','Menghindar.','Tepat.','Tepat dan ikut memulihkan kerukunan.'],'Laporkan, jangan provokasi, dan rawat kerukunan.')
+];
+
+/* susun jadi 2 tryout penuh: Paket 3 lama dibagi dua, lalu ditambah soal baru */
+(function(){
+  const P3=PACKS.pop(),tot={},seen={};
+  P3.items.forEach(q=>tot[q.sec]=(tot[q.sec]||0)+1);
+  P3.items.forEach(q=>{seen[q.sec]=(seen[q.sec]||0)+1;(seen[q.sec]<=Math.ceil(tot[q.sec]/2)?PACKS[0]:PACKS[1]).items.push(q)});
+  PACKS[0].items.push(...NEW1);PACKS[1].items.push(...NEW2);
+  const o={TWK:0,TIU:1,TKP:2};PACKS.forEach(P=>P.items.sort((a,b)=>o[a.sec]-o[b.sec]));
+})();
+
+/* ratakan ke satu bank soal, lalu acak urutan pilihan (tetap sama tiap dibuka) agar letak kunci tidak berpola */
+const Q=[];
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const ORDERED=/^Pasal|^(Pertama|Kedua|Ketiga|Keempat|Kelima)$|^[A-Z]$|^(Senin|Selasa|Rabu|Kamis|Jumat)$|^UU No/;
+function permute(q){
+  if(q.keep||(!isTKPraw(q)&&q.opts.every(o=>ORDERED.test(o))))return;
+  const r=rng(q.id*7919),p=[0,1,2,3,4];
+  for(let i=4;i>0;i--){const j=Math.floor(r()*(i+1));[p[i],p[j]]=[p[j],p[i]]}
+  q.opts=p.map(i=>q.opts[i]);q.w=p.map(i=>q.w[i]);
+  if(q.sc)q.sc=p.map(i=>q.sc[i]);else q.a=p.indexOf(q.a);
+}
+function isTKPraw(q){return q.sec==='TKP'}
+PACKS.forEach((P,pi)=>P.items.forEach((q,k)=>{q.id=(pi+1)*1000+k;q.pack=pi;permute(q);Q.push(q)}));
+
+const SEC={
+ TWK:{name:'Tes Wawasan Kebangsaan',dir:'Pilih satu jawaban yang paling tepat. Benar 5 poin, salah atau kosong 0.',max:150,pg:65,real:30},
+ TIU:{name:'Tes Intelegensia Umum',dir:'Pilih satu jawaban yang paling tepat. Benar 5 poin, salah atau kosong 0.',max:175,pg:80,real:35},
+ TKP:{name:'Tes Karakteristik Pribadi',dir:'Tidak ada jawaban salah. Setiap pilihan bernilai 1 sampai 5. Pilih sikap yang paling tepat.',max:225,pg:166,real:45}
+};
+const ORDER=['TWK','TIU','TKP'];
+const L5='ABCDE';
+const byId=id=>Q.find(q=>q.id===id);
+const isTKP=q=>q.sec==='TKP';
+const bestOf=q=>isTKP(q)?q.sc.indexOf(5):q.a;
+const ptsOf=(q,a)=>a===undefined?0:isTKP(q)?q.sc[a]:(a===q.a?5:0);
+/* status: ok (benar / TKP 5), mid (TKP 4), no (salah / TKP ≤3), na (kosong) */
+function status(q,a){if(a===undefined)return'na';if(!isTKP(q))return a===q.a?'ok':'no';const s=q.sc[a];return s===5?'ok':s===4?'mid':'no'}
+
+/* ================= STORAGE ================= */
+function sget(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function sset(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+const HKEY='cpns-skd-history-v1', WKEY='cpns-skd-wrong-v2', PKEY='cpns-skd-pack-v2', RKEY='cpns-skd-run-v1';
+let selPack=sget(PKEY,0);
+if(selPack!=='x'&&!(selPack>=0&&selPack<PACKS.length))selPack=0;
+
+/* ================= PEMILIHAN SOAL ================= */
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function randomSet(){
+  const take=(s,n)=>shuffle(Q.filter(q=>q.sec===s)).slice(0,n).map(q=>q.id);
+  return [...take('TWK',30),...take('TIU',35),...take('TKP',45)];
+}
+function packSet(pack,secs){
+  if(pack==='x')return randomSet().filter(id=>secs.includes(byId(id).sec));
+  return Q.filter(q=>q.pack===pack&&secs.includes(q.sec)).map(q=>q.id);
+}
+function packLabel(p){return p==='x'?'Acak':PACKS[p].name}
+function limitFor(n){return Math.round(n*100/110)*60} // setara 100 menit untuk 110 soal
+
+/* ================= STATE ================= */
+let st=null, tick=null, confirmEnd=false, revFilter='wrong';
+const app=document.getElementById('app');
+
+function startTest(mode,ids,label){
+  st={mode,ids,label,cur:0,ans:{},flags:{},start:Date.now(),limit:mode==='sim'?limitFor(ids.length):0,done:false};
+  if(mode==='sim')saveRun();
+  confirmEnd=false;clearInterval(tick);
+  if(st.limit)tick=setInterval(()=>{updTimer();if(remaining()<=0)finish()},1000);
+  renderTest();window.scrollTo(0,0);
+}
+/* simpan simulasi yang sedang berjalan agar bisa dilanjutkan */
+function saveRun(){if(st&&st.mode==='sim'&&!st.done)sset(RKEY,{ids:st.ids,label:st.label,cur:st.cur,ans:st.ans,flags:st.flags,start:st.start,limit:st.limit})}
+function getRun(){const r=sget(RKEY,null);return r&&Array.isArray(r.ids)&&r.ids.every(id=>byId(id))?r:null}
+function resumeRun(){
+  const r=getRun();if(!r)return;
+  st={mode:'sim',ids:r.ids,label:r.label,cur:r.cur||0,ans:r.ans||{},flags:r.flags||{},start:r.start,limit:r.limit,done:false};
+  confirmEnd=false;clearInterval(tick);
+  if(remaining()<=0){finish();return}
+  tick=setInterval(()=>{updTimer();if(remaining()<=0)finish()},1000);
+  renderTest();window.scrollTo(0,0);
+}
+function remaining(){return st.limit-Math.floor((Date.now()-st.start)/1000)}
+function fmtTime(s){s=Math.max(0,s);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function updTimer(){const el=document.getElementById('timer');if(!el||!st)return;
+  if(st.done){el.textContent=fmtTime(st.result.used);el.classList.remove('low');return}
+  if(st.limit){const r=remaining();el.textContent=fmtTime(r);el.classList.toggle('low',r<=180)}
+  else el.textContent=fmtTime(Math.floor((Date.now()-st.start)/1000));}
+
+/* ================= HOME ================= */
+function renderHome(){
+  clearInterval(tick);st=null;
+  const h=sget(HKEY,[]), wrong=sget(WKEY,[]).filter(id=>byId(id));
+  const chips=[...PACKS.map((P,i)=>({v:i,t:P.name})),{v:'x',t:'Acak'}];
+  const n=packSet(selPack,ORDER).length, run=getRun();
+  let runHTML='';
+  if(run){const left=run.limit-Math.floor((Date.now()-run.start)/1000),done=Object.keys(run.ans).length;
+    runHTML=`<section class="panel" style="border-color:var(--drop)"><span class="label">Simulasi belum selesai</span>
+      <h2>${run.label}</h2><p>${done} dari ${run.ids.length} soal terjawab · ${left>0?`sisa waktu <span class="mono">${fmtTime(left)}</span>`:'waktu sudah habis'}</p>
+      <div class="row"><button class="btn primary" id="go-resume">${left>0?'Lanjutkan ujian':'Lihat hasil'}</button><button class="btn" id="drop-run">Batalkan</button></div></section>`}
+  app.innerHTML=`
+  <div class="home">
+    <header class="masthead">
+      <span class="formcode">BANK SOAL ${Q.length} · ${PACKS.length} PAKET · TWK · TIU · TKP</span>
+      <h1>Simulasi SKD CPNS</h1>
+      <p>Latihan Seleksi Kompetensi Dasar dengan sistem nilai seperti CAT BKN. Setiap jawaban dibahas: kenapa pilihanmu keliru, kenapa kunci benar, dan materi yang perlu diulang. Untuk TKP, kamu bisa melihat nilai 1–5 setiap pilihan.</p>
+    </header>
+    ${runHTML}
+    <section class="panel">
+      <span class="label">Pilih paket soal</span>
+      <div class="chips" role="radiogroup" aria-label="Paket soal">${chips.map(c=>`<button class="chip ${c.v===selPack?'on':''}" data-pack="${c.v}" role="radio" aria-checked="${c.v===selPack}">${c.t}</button>`).join('')}</div>
+      <p class="note">${selPack==='x'?'Paket acak mengambil 110 soal dari seluruh bank (30 TWK, 35 TIU, 45 TKP). Setiap kali dimulai, isinya berbeda.':`${PACKS[selPack].name}: tryout penuh 110 soal, yaitu 30 TWK, 35 TIU, dan 45 TKP, sama seperti ujian asli.`}</p>
+    </section>
+    <div class="grid2">
+      <section class="panel">
+        <span class="label">Mode ujian · ${packLabel(selPack)}</span>
+        <h2>Simulasi berwaktu</h2>
+        <p>${n} soal, ${limitFor(n)/60} menit, seperti CAT BKN. Bebas pindah soal dan tandai ragu. Pembahasan muncul setelah selesai. Jika halaman tertutup, ujian bisa dilanjutkan.</p>
+        <div class="row"><button class="btn primary" id="go-sim">Mulai simulasi</button></div>
+      </section>
+      <section class="panel">
+        <span class="label">Mode latihan · ${packLabel(selPack)}</span>
+        <h2>Latihan per subtes</h2>
+        <p>Tanpa batas waktu. Jawaban langsung diperiksa, lengkap dengan alasan dan materi singkat.</p>
+        <div class="row">
+          <button class="btn" data-prac="TWK">TWK</button>
+          <button class="btn" data-prac="TIU">TIU</button>
+          <button class="btn" data-prac="TKP">TKP</button>
+          <button class="btn" data-prac="ALL">Semua subtes</button>
+        </div>
+      </section>
+    </div>
+    <div class="grid2">
+      <section class="panel">
+        <span class="label">Soal yang perlu diulang</span>
+        <h2>${wrong.length?`${wrong.length} soal perlu diulang`:'Belum ada soal yang perlu diulang'}</h2>
+        <p>${wrong.length?'Soal TWK/TIU yang salah dan soal TKP yang nilainya 3 ke bawah tersimpan di sini. Soal hilang dari daftar setelah dijawab benar (TKP: nilai 4 atau 5).':'Soal yang salah, atau soal TKP bernilai rendah, akan masuk ke daftar ini agar bisa dilatih ulang.'}</p>
+        <div class="row"><button class="btn" id="go-wrong" ${wrong.length?'':'disabled'}>Latihan ulang</button>${wrong.length?'<button class="btn" id="clr-wrong">Kosongkan daftar</button>':''}</div>
+      </section>
+      <section class="panel">
+        <span class="label">Riwayat skor di perangkat ini</span>
+        ${h.length?`<ul class="hist">${h.map(r=>`<li><span>${r.date} · ${r.label}</span><span class="sc">${r.score}</span></li>`).join('')}</ul>`
+          :`<p>Belum ada riwayat. Selesaikan satu simulasi atau latihan, skornya akan tersimpan di sini.</p>`}
+        <div class="keys"><span><kbd>A</kbd>–<kbd>E</kbd> pilih jawaban</span><span><kbd>←</kbd><kbd>→</kbd> pindah soal</span></div>
+      </section>
+    </div>
+    <section class="panel">
+      <span class="label">Format SKD CPNS asli</span>
+      <div style="overflow-x:auto"><table class="fmt">
+        <thead><tr><th>Subtes</th><th class="n">Soal</th><th class="n">Nilai per soal</th><th class="n">Maks</th><th class="n">Ambang batas</th></tr></thead>
+        <tbody>
+          <tr><td>Tes Wawasan Kebangsaan (TWK)</td><td class="n">30</td><td class="n">0 / 5</td><td class="n">150</td><td class="n">65</td></tr>
+          <tr><td>Tes Intelegensia Umum (TIU)</td><td class="n">35</td><td class="n">0 / 5</td><td class="n">175</td><td class="n">80</td></tr>
+          <tr><td>Tes Karakteristik Pribadi (TKP)</td><td class="n">45</td><td class="n">1–5</td><td class="n">225</td><td class="n">166</td></tr>
+          <tr><td><strong>Total</strong> · 100 menit</td><td class="n">110</td><td class="n"></td><td class="n"><strong>550</strong></td><td class="n"></td></tr>
+        </tbody></table></div>
+      <p class="note">Ambang batas mengacu pada KepmenPANRB No. 321 Tahun 2024 untuk formasi umum. Pastikan lagi di pengumuman resmi seleksi yang kamu ikuti. Ketiga subtes harus lolos sekaligus. Skor di sini perkiraan, bukan nilai resmi. Soal TIU figural (gambar) belum termasuk.</p>
+    </section>
+  </div>`;
+  app.querySelectorAll('[data-pack]').forEach(b=>b.onclick=()=>{const v=b.dataset.pack;selPack=v==='x'?'x':+v;sset(PKEY,selPack);renderHome()});
+  const gr=document.getElementById('go-resume');if(gr)gr.onclick=resumeRun;
+  const dr=document.getElementById('drop-run');
+  if(dr)dr.onclick=()=>{if(dr.dataset.c){try{localStorage.removeItem(RKEY)}catch(e){}renderHome()}else{dr.dataset.c='1';dr.textContent='Yakin batalkan? Klik lagi';dr.classList.add('danger')}};
+  document.getElementById('go-sim').onclick=()=>startTest('sim',packSet(selPack,ORDER),packLabel(selPack)+' · Simulasi');
+  app.querySelectorAll('[data-prac]').forEach(b=>b.onclick=()=>{
+    const v=b.dataset.prac, secs=v==='ALL'?ORDER:[v];
+    startTest('prac',packSet(selPack,secs),packLabel(selPack)+' · Latihan '+(v==='ALL'?'Semua':v))});
+  const gw=document.getElementById('go-wrong');
+  if(gw)gw.onclick=()=>startTest('prac',orderIds(wrong),'Ulang soal');
+  const cw=document.getElementById('clr-wrong');
+  if(cw)cw.onclick=()=>{if(cw.dataset.c){sset(WKEY,[]);renderHome()}else{cw.dataset.c='1';cw.textContent='Yakin? Klik lagi';cw.classList.add('danger')}};
+}
+function orderIds(ids){return ids.slice().sort((a,b)=>{const A=byId(a),B=byId(b);return ORDER.indexOf(A.sec)-ORDER.indexOf(B.sec)||a-b})}
+
+/* ================= TEST ================= */
+function isLocked(id){return st.done||(st.mode==='prac'&&st.ans[id]!==undefined)}
+function wrongNote(q,k){return(q.w&&q.w[k])||'Pilihan ini tidak sesuai dengan yang ditanyakan.'}
+
+function feedbackHTML(q,my){
+  const s=status(q,my), tip=TIPS[q.t], b=bestOf(q);
+  let h='';
+  if(isTKP(q)){
+    const head=my===undefined?'Tidak dijawab · 0 poin':`Nilai jawabanmu: ${q.sc[my]} dari 5`;
+    h+=`<div class="feedback ${s}"><strong>${head} · Nilai tertinggi ${L5[b]}</strong>`;
+    if(my!==undefined&&my!==b)h+=`<div class="why ${s==='no'?'no':''}"><span class="label">Kenapa ${L5[my]} bernilai ${q.sc[my]}</span><p>${wrongNote(q,my)}</p></div>`;
+    h+=`<div class="why ok"><span class="label">Kenapa ${L5[b]} bernilai 5</span><p>${q.w[b]} ${q.ex}</p></div>`;
+    const rank=[0,1,2,3,4].sort((x,y)=>q.sc[y]-q.sc[x]);
+    h+=`<details class="others" ${my!==b?'open':''}><summary>Nilai semua pilihan</summary><ul>${rank.map(k=>`<li><b class="mono">${L5[k]} · ${q.sc[k]}</b> — ${wrongNote(q,k)}</li>`).join('')}</ul></details></div>`;
+  }else{
+    const ok=my===q.a;
+    h+=`<div class="feedback ${s}"><strong>${my===undefined?'Tidak dijawab · 0 poin':ok?'Benar · 5 poin':'Kurang tepat · 0 poin'} · Kunci ${L5[q.a]}</strong>`;
+    if(my!==undefined&&!ok)h+=`<div class="why no"><span class="label">Kenapa ${L5[my]} salah</span><p>${wrongNote(q,my)}</p></div>`;
+    h+=`<div class="why ok"><span class="label">${ok?'Pembahasan':`Kenapa ${L5[q.a]} benar`}</span><p>${q.ex}</p></div>`;
+    if(!ok){
+      const others=[0,1,2,3,4].filter(k=>k!==q.a&&k!==my);
+      h+=`<details class="others"><summary>Lihat alasan pilihan lainnya</summary><ul>${others.map(k=>`<li><b class="mono">${L5[k]}</b> ${q.opts[k]} — ${wrongNote(q,k)}</li>`).join('')}</ul></details>`;
+    }
+    h+=`</div>`;
+  }
+  if(tip)h+=`<div class="tip"><span class="label">Materi · ${tip[0]}</span><p>${tip[1]}</p></div>`;
+  return h;
+}
+
+function renderTest(){
+  const id=st.ids[st.cur], q=byId(id), n=st.cur+1, tot=st.ids.length;
+  const locked=isLocked(id), my=st.ans[id], b=bestOf(q);
+  let body=`<div class="stem">${q.q}</div>`;
+  body+=`<div class="opts" role="radiogroup">${q.opts.map((o,k)=>{
+    let c='opt';
+    if(locked){
+      if(k===b)c+=' right';
+      else if(k===my)c+=isTKP(q)&&q.sc[k]===4?' mid':' wrong';
+    }else if(k===my)c+=' sel';
+    const pt=locked&&isTKP(q)?`<span class="pt ${q.sc[k]===5?'p5':''}">${q.sc[k]} poin</span>`:'';
+    return `<button class="${c}" data-k="${k}" role="radio" aria-checked="${k===my}" ${locked?'disabled':''}><span class="bub">${L5[k]}</span><span>${o}</span>${pt}</button>`}).join('')}</div>`;
+  if(locked)body+=feedbackHTML(q,my);
+
+  app.innerHTML=`
+  <div class="bar">
+    <div class="sec"><span class="label">${st.label} · Soal ${n} dari ${tot}</span><strong>${SEC[q.sec].name}</strong></div>
+    <div class="row">
+      <span class="timer" id="timer" title="${st.limit?'Sisa waktu':'Waktu berjalan'}">00:00</span>
+      <button class="btn ${confirmEnd?'danger':''}" id="end">${st.done?'Kembali ke hasil':confirmEnd?'Yakin selesai? Klik lagi':'Selesai'}</button>
+      <button class="btn" id="home" title="Kembali ke beranda">Keluar</button>
+    </div>
+  </div>
+  <div class="test">
+    <section class="qcard">
+      <div class="qhead"><span class="qnum">No. ${n} · ${q.sec} · ${PACKS[q.pack].name}</span>
+        ${st.mode==='sim'&&!st.done?`<button class="flag ${st.flags[id]?'on':''}" id="flag">${st.flags[id]?'Ditandai ragu':'Tandai ragu'}</button>`:''}</div>
+      <div class="direction">${SEC[q.sec].dir}</div>
+      ${body}
+      <div class="nav">
+        <button class="btn" id="prev" ${st.cur===0?'disabled':''}>← Sebelumnya</button>
+        ${st.cur<tot-1?`<button class="btn primary" id="next">Berikutnya →</button>`:`<button class="btn primary" id="end2">${st.done?'Kembali ke hasil':'Lihat hasil'}</button>`}
+      </div>
+    </section>
+    ${renderSheet()}
+  </div>`;
+  updTimer();bindTest();
+}
+
+function renderSheet(){
+  const groups=[];
+  st.ids.forEach((id,pos)=>{const s=byId(id).sec;let G=groups.find(x=>x.g===s);if(!G){G={g:s,list:[]};groups.push(G)}G.list.push({id,pos})});
+  const answered=st.ids.filter(id=>st.ans[id]!==undefined).length;
+  const reveal=st.done||st.mode==='prac';
+  return `<aside class="sheet" aria-label="Lembar jawaban">
+    <div class="sheet-head"><strong>LEMBAR JAWABAN</strong><span class="mono" style="font-size:13px">${answered}/${st.ids.length}</span></div>
+    ${groups.map(G=>`<div class="grp"><span class="label">${G.g} · ${SEC[G.g].name}</span><div class="cells">${G.list.map(({id,pos})=>{
+      let c='cell';const a=st.ans[id],q=byId(id);
+      if(isLocked(id)){const s=status(q,a);c+=s==='ok'?' ok':s==='mid'?' mid':s==='no'?' no':''}
+      else if(a!==undefined)c+=' ans';
+      if(pos===st.cur)c+=' cur';if(st.flags[id]&&!st.done)c+=' flg';
+      return `<button class="${c}" data-go="${pos}" aria-label="Soal ${pos+1}">${a!==undefined&&!isLocked(id)?L5[a]:pos+1}</button>`}).join('')}</div></div>`).join('')}
+    <div class="legend">${reveal?'<span><i></i>Kosong</span><span><i class="g"></i>Benar / 5</span><span><i class="m"></i>TKP 4</span><span><i class="r"></i>Salah / ≤3</span>':'<span><i></i>Kosong</span><span><i class="a"></i>Terisi</span><span><i class="f"></i>Ragu</span>'}</div>
+  </aside>`;
+}
+
+function bindTest(){
+  const id=st.ids[st.cur];
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>choose(+b.dataset.k));
+  app.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+  const $=x=>document.getElementById(x);
+  $('prev').onclick=()=>go(st.cur-1);
+  if($('next'))$('next').onclick=()=>go(st.cur+1);
+  if($('end2'))$('end2').onclick=endClick;
+  $('end').onclick=endClick;
+  $('home').onclick=renderHome;
+  if($('flag'))$('flag').onclick=()=>{st.flags[id]=!st.flags[id];saveRun();renderTest()};
+}
+function endClick(){if(st.done){renderResult(st.result);return}if(!confirmEnd){confirmEnd=true;renderTest();setTimeout(()=>{if(confirmEnd&&st&&!st.done){confirmEnd=false;renderTest()}},4000);return}finish()}
+function choose(k){const id=st.ids[st.cur];if(isLocked(id))return;st.ans[id]=k;confirmEnd=false;saveRun();renderTest()}
+function go(p){if(p<0||p>=st.ids.length)return;confirmEnd=false;st.cur=p;saveRun();renderTest();window.scrollTo({top:0})}
+
+/* ================= SKOR ================= */
+function finish(){
+  clearInterval(tick);
+  if(st.done){renderResult(st.result);return}
+  st.done=true;if(st.mode==='sim'){try{localStorage.removeItem(RKEY)}catch(e){}}
+  const sec={};
+  st.ids.forEach(id=>{const q=byId(id);const S=sec[q.sec]||(sec[q.sec]={raw:0,max:0,n:0,ok:0});S.raw+=ptsOf(q,st.ans[id]);S.max+=5;S.n++;if(status(q,st.ans[id])==='ok')S.ok++});
+  for(const k in sec){const S=sec[k];S.scaled=Math.round(S.raw/S.max*SEC[k].max);S.pass=S.scaled>=SEC[k].pg}
+  const full=ORDER.every(k=>sec[k]);
+  const total=full?ORDER.reduce((t,k)=>t+sec[k].scaled,0):null;
+  const allPass=ORDER.filter(k=>sec[k]).every(k=>sec[k].pass);
+  const used=Math.floor((Date.now()-st.start)/1000);
+  let wl=sget(WKEY,[]);
+  st.ids.forEach(id=>{const s=status(byId(id),st.ans[id]);if(s==='ok'||s==='mid')wl=wl.filter(x=>x!==id);else if(s==='no'&&!wl.includes(id))wl.push(id)});
+  sset(WKEY,wl);
+  const h=sget(HKEY,[]);
+  const secs=ORDER.filter(k=>sec[k]);
+  const label=full?`${total} · ${allPass?'Lolos':'Belum lolos'}`:secs.map(k=>`${k} ${sec[k].scaled}`).join(' · ');
+  h.unshift({date:new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short'}),label:st.label,score:label});
+  sset(HKEY,h.slice(0,8));
+  st.result={sec,total,allPass,used,full};
+  revFilter=st.ids.some(id=>status(byId(id),st.ans[id])!=='ok')?'wrong':'all';
+  renderResult(st.result);
+}
+
+function renderResult(r){
+  window.scrollTo(0,0);
+  const secs=ORDER.filter(k=>r.sec[k]);
+  const rows=secs.map(k=>{const S=r.sec[k],M=SEC[k];
+    return `<div class="barrow"><b>${k}</b><div class="track"><div class="fill ${S.pass?'':'no'}" style="width:${S.scaled/M.max*100}%"></div><span class="pg" style="left:${M.pg/M.max*100}%" title="Ambang batas ${M.pg}"></span></div><span class="mono">${S.scaled}/${M.max} <span class="${S.pass?'ok-t':'no-t'}">${S.pass?'✓':'✗'} ${M.pg}</span></span></div>`}).join('');
+  const failed=secs.filter(k=>!r.sec[k].pass);
+  const notReview=st.ids.filter(id=>status(byId(id),st.ans[id])!=='ok');
+  const tc={};st.ids.forEach(id=>{const q=byId(id),s=status(q,st.ans[id]);if(s==='no'||s==='na')tc[q.t]=(tc[q.t]||0)+1});
+  const topics=Object.entries(tc).sort((a,b)=>b[1]-a[1]);
+  const list=revFilter==='wrong'?notReview:st.ids;
+  const big=r.full?`${r.total}<small>/550</small>`:secs.map(k=>r.sec[k].scaled).join(' · ');
+  let msg;
+  if(r.allPass)msg=r.full?'Semua subtes melewati ambang batas. Di seleksi asli, yang lolos ke SKB adalah peserta dengan peringkat teratas di formasinya, jadi terus kejar nilai setinggi mungkin.':'Subtes ini melewati ambang batas.';
+  else msg=`Belum melewati ambang batas ${failed.length>1?failed.slice(0,-1).join(', ')+' dan '+failed[failed.length-1]:failed[0]}. Di seleksi asli, satu subtes saja yang kurang membuat peserta gugur meski totalnya tinggi.`;
+  app.innerHTML=`
+  <div class="result">
+    <header class="masthead"><span class="formcode">HASIL · ${st.label.toUpperCase()} · WAKTU ${fmtTime(r.used)}</span><h1>Hasil ujian</h1></header>
+    <section class="score">
+      <div><span class="label">${r.full?'Perkiraan nilai SKD':'Perkiraan nilai'}</span><div class="big">${big}</div>
+        <span class="verdict ${r.allPass?'ok':'no'}">${r.allPass?'Lolos ambang batas':'Belum lolos ambang batas'}</span></div>
+      <div class="bars">${rows}
+        <p class="note">${msg} Nilai di kanan sudah dikonversi ke skala ujian asli (garis hitam = ambang batas). Ini perkiraan dari ${st.ids.length} soal.</p></div>
+    </section>
+    <div class="row">
+      ${notReview.length?`<button class="btn primary" id="redo">Latihan ulang ${notReview.length} soal belum maksimal</button>`:''}
+      <button class="btn ${notReview.length?'':'primary'}" id="again">Ulangi${selPack==='x'?' (acak baru)':''}</button>
+      <button class="btn" id="rev">Telusuri soal satu per satu</button>
+      <button class="btn" id="home">Beranda</button>
+    </div>
+    ${topics.length?`<section class="panel"><span class="label">Materi yang perlu dipelajari</span>
+      <div class="topics">${topics.map(([t,c])=>`<details class="topic"><summary><span>${TIPS[t][0]}</span><span class="mono cnt">${c} soal</span></summary><p>${TIPS[t][1]}</p></details>`).join('')}</div></section>`:''}
+    <section class="review">
+      <div class="row" style="justify-content:space-between"><span class="label">Pembahasan</span>
+        <div class="chips sm"><button class="chip ${revFilter==='wrong'?'on':''}" data-f="wrong">Belum maksimal (${notReview.length})</button><button class="chip ${revFilter==='all'?'on':''}" data-f="all">Semua (${st.ids.length})</button></div></div>
+      ${list.length?list.map(id=>{const pos=st.ids.indexOf(id),q=byId(id),my=st.ans[id],s=status(q,my),b=bestOf(q);
+        return `<details ${s!=='ok'&&revFilter==='wrong'?'open':''}><summary><span class="mk ${s}">${pos+1}</span><span class="sum">${q.q.replace(/\n/g,' ')}</span><span class="tag hidden-sm">${q.sec} · ${ptsOf(q,my)} poin</span></summary>
+          <div class="body">
+            <div class="tag">Jawabanmu: <span class="${s==='ok'?'ok-t':'no-t'}">${my===undefined?'—':L5[my]+'. '+q.opts[my]}</span> · ${isTKP(q)?'Nilai 5':'Kunci'}: <span class="ok-t">${L5[b]}. ${q.opts[b]}</span></div>
+            ${feedbackHTML(q,my)}
+          </div></details>`}).join(''):'<p class="note">Semua jawaban sudah maksimal.</p>'}
+    </section>
+  </div>`;
+  const $=x=>document.getElementById(x);
+  const mode=st.mode, secsIn=[...new Set(st.ids.map(id=>byId(id).sec))];
+  if($('redo'))$('redo').onclick=()=>startTest('prac',notReview,'Ulang soal');
+  $('again').onclick=()=>startTest(mode,packSet(selPack,secsIn),packLabel(selPack)+(mode==='sim'?' · Simulasi':' · Latihan'));
+  $('home').onclick=renderHome;
+  $('rev').onclick=()=>{st.cur=0;renderTest()};
+  app.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{revFilter=b.dataset.f;renderResult(r)});
+}
+
+/* ================= KEYBOARD ================= */
+document.addEventListener('keydown',e=>{
+  if(!st||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(!document.querySelector('.qcard'))return;
+  const k=e.key.toLowerCase();
+  if(k.length===1&&'abcde'.includes(k)){choose('abcde'.indexOf(k));return}
+  if(e.key==='ArrowRight'){go(st.cur+1);return}
+  if(e.key==='ArrowLeft'){go(st.cur-1);return}
+});
+
+/* tombol Back di Android */
+window.__back=function(){if(st){renderHome();window.scrollTo(0,0);return true}return false};
+
+renderHome();
+</script>
+<script>if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(function(){})}</script>
+</body></html>
