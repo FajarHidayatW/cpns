@@ -2,8 +2,8 @@
 
 Latihan Seleksi Kompetensi Dasar (SKD) CPNS dengan format seperti CAT BKN.
 
-- **2 paket tryout penuh**, masing-masing 110 soal: 30 TWK, 35 TIU, 45 TKP, waktu 100 menit.
-- **Mode Acak** mengambil 110 soal dari seluruh bank (220 soal).
+- **5 paket tryout penuh**, masing-masing 110 soal: 30 TWK, 35 TIU, 45 TKP, waktu 100 menit.
+- **Mode Acak** mengambil 110 soal dari seluruh bank (550 soal).
 - **Latihan per subtes** (TWK, TIU, TKP) tanpa batas waktu, jawaban langsung diperiksa.
 - **Pembahasan setiap pilihan.** TWK/TIU: kenapa pilihan salah dan kenapa kunci benar. TKP: nilai 1–5 setiap pilihan beserta alasannya.
 - **Nilai dikonversi ke skala asli** (TWK 150, TIU 175, TKP 225) dan dicek terhadap ambang batas 65 / 80 / 166 (KepmenPANRB No. 321 Tahun 2024, formasi umum).
