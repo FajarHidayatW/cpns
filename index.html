@@ -108,6 +108,18 @@ kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border
 .fast{border:1px solid var(--warn);border-left-width:4px;border-radius:6px;padding:12px 14px;display:grid;gap:4px;font-size:14px;background:var(--warn-soft)}
 .fast .label{color:var(--warn)}
 .fast p{margin:0;max-width:72ch}
+.fast ul,.gcard ul{margin:0;padding-left:20px;display:grid;gap:5px;max-width:76ch}
+.guide-link{justify-self:start;border:none;background:none;padding:2px 0;color:var(--drop);font-weight:600;font-size:13px}
+.guide-link:hover{text-decoration:underline}
+.guide{position:fixed;inset:0;z-index:20;background:var(--paper);overflow:auto;padding:env(safe-area-inset-top,0px) max(16px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(16px,env(safe-area-inset-left,0px))}
+.guide .gin{max-width:880px;margin:0 auto;padding-block:16px 48px;display:grid;gap:16px}
+.ghead{position:sticky;top:0;z-index:2;background:var(--paper);display:grid;gap:12px;padding-block:8px 12px;border-bottom:1px solid var(--line)}
+.ghead .row{justify-content:space-between}
+.gcard{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:grid;gap:10px;scroll-margin-top:150px}
+.gcard h3{font-size:17px}
+.gcard.hl{border-color:var(--warn);box-shadow:0 0 0 2px var(--warn-soft)}
+.gcard .inti{margin:0;font-size:14px;color:var(--muted);max-width:76ch}
+.gnum{font-family:var(--f-mono);font-size:12px;color:var(--drop)}
 .strat{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .strat div{border-left:3px solid var(--drop);padding:2px 0 2px 12px}
 .strat b{display:block;font-size:14px;margin-bottom:2px}
@@ -1501,41 +1513,102 @@ const CARA={
 
 /* cara cepat per materi (dipakai untuk semua soal, termasuk TWK dan TKP) */
 const CEPAT={
- 'twk-pancasila':'Hafalkan lambang berurutan "Bin-Ran-Ber-Ban-Pa": Bintang, Rantai, Beringin, Banteng, Padi-kapas. Bulu Garuda 17-8-19-45 = tanggal Proklamasi. Untuk soal pengamalan sila, cari kata kunci: ibadah/toleransi agama (1), kemanusiaan/menolong (2), persatuan/kepentingan bangsa (3), musyawarah (4), adil/tidak boros/hak orang lain (5).',
- 'twk-uud':'Kelompokkan pasal: 1 (bentuk, kedaulatan, negara hukum) · 3 (MPR) · 4–17 (Presiden) · 20–22 (DPR, Perppu) · 23 (keuangan, BPK) · 24 (kehakiman) · 27–28J (warga negara dan HAM) · 29 (agama) · 30 (pertahanan) · 31–32 (pendidikan, budaya) · 33–34 (ekonomi, sosial) · 35–36C (bendera, bahasa, lambang, lagu) · 37 (perubahan UUD). Jembatan keledai 35–36B: "Ber-Ba-La-La" (Bendera, Bahasa, Lambang, Lagu).',
- 'twk-sejarah':'Hafalkan garis waktu, bukan soal lepas: 1908 Budi Utomo → 1928 Sumpah Pemuda → 29 Mei–1 Juni 1945 BPUPKI I → 22 Juni Piagam Jakarta → 16 Agustus Rengasdengklok → 17 Agustus Proklamasi → 18 Agustus UUD disahkan → 1949 KMB/RIS → 1950 NKRI → 1955 Pemilu & KAA → 1959 Dekrit. Dengan garis waktu, pilihan tanggal yang tertukar langsung ketahuan.',
- 'twk-hukum':'Tata urutan disingkat "U-T-U-P-P-P-P": UUD, Tap MPR, UU/Perppu, PP, Perpres, Perda Prov, Perda Kab/Kota. Nomor UU yang sering keluar: 12/2011 (peraturan), 20/2023 (ASN), 25/2009 (pelayanan publik), 23/2014 (pemda), 23/2019 (bela negara), 24/2009 (bendera-bahasa-lambang-lagu).',
- 'twk-integritas':'Pilih jawaban yang (1) menolak pelanggaran tanpa kompromi, (2) tetap sesuai prosedur, dan (3) melapor lewat jalur resmi. Coret langsung pilihan yang mengandung "sekali saja", "asalkan", "tidak ketahuan", "dibagi", atau "menyebarkan ke media sosial".',
- 'twk-belanegara':'Bela negara bagi ASN = kerja profesional dan jujur, bukan angkat senjata. Pasal kunci: 27(3) bela negara, 30(1) hankam. Lima nilai: Cinta tanah air, Sadar berbangsa, Setia Pancasila, Rela berkorban, Kemampuan awal bela negara.',
- 'twk-bahasa':'Kata depan di/ke/dari + tempat → pisah; awalan di- + kerja → sambung. Kata baku sering keluar: praktik, apotek, sistem, kualitas, nasihat, analisis, izin, risiko, sekadar, jadwal, karier, atlet, hakikat. "Pun" dipisah kecuali walaupun, meskipun, adapun, bagaimanapun, sekalipun (=walaupun).',
- 'twk-asn':'BerAKHLAK = Berorientasi pelayanan, Akuntabel, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif. Cocokkan kata kunci: barang milik negara/jujur → Akuntabel; rahasia jabatan/setia → Loyal; inovasi/perubahan → Adaptif; kerja sama → Kolaboratif; menghargai perbedaan → Harmonis.',
- 'tiu-sinonim':'Ganti kata soal dengan setiap pilihan dalam satu kalimat contoh. Pilihan yang maknanya tetap sama itulah jawabannya. Jangan terkecoh kata yang bunyinya mirip (evokasi ≠ evakuasi, kolaborasi ≠ elaborasi).',
- 'tiu-antonim':'Cari sinonimnya dulu dalam kepala, lalu pilih lawan dari sinonim itu. Coret pilihan yang justru sinonim; biasanya ada 2–3 jebakan sinonim.',
- 'tiu-analogi':'Buat satu kalimat hubungan, misalnya "A adalah alat yang dipakai B". Uji kalimat itu ke setiap pilihan dengan urutan yang sama. Pilihan yang urutannya terbalik langsung dicoret.',
- 'tiu-silogisme':'Tiga pola yang paling sering: (1) Jika P maka Q; tidak Q → tidak P. (2) P atau Q; bukan P → Q. (3) "Sebagian" + "Semua" → kesimpulan "sebagian". Jika premis kedua berbunyi "tidak P" atau "Q terjadi", jawabannya hampir selalu "tidak dapat disimpulkan/belum tentu".',
- 'tiu-analitis':'Gambar kotak atau garis, jangan menghafal di kepala. Urutan pengisian: posisi pasti (ujung, nomor tertentu) → pasangan "tepat di sebelah" → larangan. Jika macet, uji satu kemungkinan; kalau melanggar syarat, kemungkinan lainnya pasti benar.',
- 'tiu-deret':'Urutan cek: (1) selisih tetap? (2) selisih naik teratur/kuadrat/prima? (3) rasio (×2, ×3, ×n)? (4) dua operasi bergantian? (5) deret loncat (pisahkan ganjil-genap) jika ada 7 suku atau lebih. Untuk huruf, pakai patokan E=5, J=10, O=15, T=20, Y=25.',
- 'tiu-hitung':'Ubah persen ke pecahan: 12,5% = 1/8, 25% = 1/4, 37,5% = 3/8, 20% = 1/5. Perkalian cepat: ×5 = ×10÷2, ×25 = ×100÷4, ×99 = ×100 − 1×. Jika pilihan jawabannya berjauhan, cukup perkirakan (bulatkan) lalu pilih yang terdekat.',
- 'tiu-perbandingan':'Cari nilai "1 bagian" dari jumlah atau selisih. Naik x% → bagi dengan (1 + x%). Diskon x% → bagi dengan (1 − x%). Persentase untung/kenaikan selalu dibagi angka awal.',
- 'tiu-cerita':'Coba masukkan pilihan jawaban ke soal (backsolving), mulai dari pilihan tengah. Rumus kunci: waktu = jarak ÷ kecepatan; berpapasan = kecepatan dijumlah; dua pekerja = (a×b)/(a+b); orang × hari tetap; rata-rata → hitung jumlahnya dulu.',
- 'tkp-pelayanan':'Nilai 5 hampir selalu pilihan paling panjang yang memuat tiga unsur: empati (minta maaf/ramah) + tetap sesuai aturan + memberi solusi sampai tuntas. Nilai 1: menolak, menyalahkan, menerima imbalan.',
- 'tkp-jejaring':'Urutan nilai: menghindar/bekerja sendiri (1) → pasif menunggu (2) → bertindak minimal (3) → proaktif (4) → proaktif + menjaga hubungan berkelanjutan lewat jalur resmi (5).',
- 'tkp-sosbud':'Nilai 5: aktif berbaur dan menghargai perbedaan, plus mengajak orang lain. Coret pilihan "menjaga jarak", "hanya dengan kelompok sendiri", atau ikut menertawakan.',
- 'tkp-tik':'Nilai 5: mau belajar teknologi, memakainya untuk efisiensi, menjaga keamanan data, dan membantu rekan. Ada risiko keamanan? Pilih yang tidak mengklik/tidak membagikan + melapor ke tim TI + mengingatkan orang lain.',
- 'tkp-profesional':'Nilai 5: bertanggung jawab, jujur, komunikatif dengan atasan, dan memperbaiki agar tidak terulang. Coret pilihan mengeluh, menolak tugas, melempar ke rekan, atau menutupi kesalahan.',
- 'tkp-radikal':'Pola nilai hampir selalu: ikut menyebarkan (1) → diam/abaikan (2) → menolak/menghapus untuk diri sendiri (3) → mengingatkan (4) → tidak menyebarkan + mengingatkan/dialog + melapor lewat jalur resmi (5).'
+ 'twk-pancasila':[
+  'Lambang sila, hafalkan "Bin-Ran-Ber-Ban-Pa": Bintang (1), Rantai (2), Beringin (3), Banteng (4), Padi-kapas (5).',
+  'Bulu Garuda = tanggal Proklamasi: sayap 17, ekor 8, pangkal ekor 19, leher 45.',
+  'Soal pengamalan sila, cari kata kuncinya: agama/toleransi → 1, menolong/kemanusiaan → 2, kepentingan bangsa → 3, musyawarah → 4, adil/tidak boros → 5.'],
+ 'twk-uud':[
+  'Pasal 1: bentuk negara (1), kedaulatan rakyat (2), negara hukum (3).',
+  'Pasal 4–17: Presiden. Pasal 20–22: DPR dan Perppu. Pasal 23: keuangan dan BPK. Pasal 24: kehakiman.',
+  'Pasal 27–28J: hak warga negara dan HAM. Pasal 29: agama. Pasal 30: pertahanan.',
+  'Pasal 31–32: pendidikan dan budaya. Pasal 33–34: ekonomi dan sosial.',
+  'Pasal 35–36B, hafalkan "Ber-Ba-La-La": Bendera, Bahasa, Lambang, Lagu. Pasal 37: perubahan UUD.'],
+ 'twk-sejarah':[
+  'Hafalkan garis waktu, bukan soal satu per satu.',
+  '1908 Budi Utomo → 1928 Sumpah Pemuda → 29 Mei–1 Juni 1945 sidang BPUPKI → 22 Juni Piagam Jakarta.',
+  '16 Agustus Rengasdengklok → 17 Agustus Proklamasi → 18 Agustus UUD disahkan.',
+  '1949 KMB → 1950 kembali ke NKRI → 1955 Pemilu dan KAA → 1959 Dekrit Presiden.',
+  'Jika pilihan berupa tanggal, cocokkan dengan garis waktu ini dan coret yang tertukar.'],
+ 'twk-hukum':[
+  'Tata urutan: UUD → Tap MPR → UU/Perppu → PP → Perpres → Perda Provinsi → Perda Kabupaten/Kota.',
+  'Nomor UU yang sering keluar: 12/2011 peraturan perundang-undangan, 20/2023 ASN, 25/2009 pelayanan publik, 23/2014 pemerintahan daerah, 23/2019 bela negara.'],
+ 'twk-integritas':[
+  'Pilih jawaban yang menolak pelanggaran, tetap sesuai prosedur, dan melapor lewat jalur resmi.',
+  'Langsung coret pilihan yang mengandung "sekali saja", "asalkan", "dibagi", atau "diunggah ke media sosial".'],
+ 'twk-belanegara':[
+  'Bela negara bagi ASN = bekerja jujur dan profesional, bukan angkat senjata.',
+  'Pasal kunci: 27 ayat (3) bela negara, 30 ayat (1) pertahanan dan keamanan.',
+  'Lima nilai dasar: cinta tanah air, sadar berbangsa, setia Pancasila, rela berkorban, kemampuan awal bela negara.'],
+ 'twk-bahasa':[
+  'Di/ke/dari + tempat → dipisah (di kantor). Di- + kata kerja → disambung (dikirim).',
+  'Kata baku yang sering keluar: praktik, apotek, sistem, kualitas, nasihat, analisis, izin, risiko, sekadar, jadwal, karier.',
+  '"Pun" dipisah (apa pun), kecuali walaupun, meskipun, adapun, bagaimanapun.'],
+ 'twk-asn':[
+  'BerAKHLAK: Berorientasi pelayanan, Akuntabel, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif.',
+  'Cocokkan kata kunci: barang milik negara → Akuntabel, rahasia jabatan → Loyal, inovasi → Adaptif, kerja sama → Kolaboratif, menghargai perbedaan → Harmonis.'],
+ 'tiu-sinonim':[
+  'Masukkan setiap pilihan ke dalam kalimat contoh. Yang maknanya tetap sama itulah jawabannya.',
+  'Waspadai kata yang bunyinya mirip: evokasi ≠ evakuasi, kolaborasi ≠ elaborasi.'],
+ 'tiu-antonim':[
+  'Pikirkan sinonimnya dulu, lalu cari lawan dari sinonim itu.',
+  'Coret pilihan yang justru bermakna sama. Biasanya ada 2–3 jebakan seperti ini.'],
+ 'tiu-analogi':[
+  'Buat satu kalimat hubungan, misalnya "A adalah alat yang dipakai B".',
+  'Uji kalimat itu ke setiap pilihan dengan urutan yang sama.',
+  'Pilihan yang urutannya terbalik langsung dicoret.'],
+ 'tiu-silogisme':[
+  '"Jika P maka Q" + "tidak Q" → "tidak P".',
+  '"P atau Q" + "bukan P" → "Q".',
+  '"Sebagian" + "Semua" → kesimpulan tetap "sebagian".',
+  '"Jika P maka Q" + "Q terjadi" atau "tidak P" → "belum tentu" / "tidak dapat disimpulkan".'],
+ 'tiu-analitis':[
+  'Selalu gambar kotak atau garis di kertas buram.',
+  'Isi urutan ini: posisi yang pasti → pasangan "tepat di sebelah" → larangan.',
+  'Jika macet, coba satu kemungkinan. Kalau melanggar syarat, berarti kemungkinan lainnya yang benar.'],
+ 'tiu-deret':[
+  'Cek berurutan: selisih tetap → selisih naik teratur → dikali/dibagi → dua operasi bergantian.',
+  'Selisih tidak teratur? Cek apakah bilangan kuadrat (1, 4, 9, 16) atau prima (2, 3, 5, 7, 11).',
+  'Deret 7 suku atau lebih yang naik-turun → pisahkan suku ganjil dan genap.',
+  'Huruf: pakai patokan E=5, J=10, O=15, T=20, Y=25.'],
+ 'tiu-hitung':[
+  'Persen ke pecahan: 12,5% = 1/8, 20% = 1/5, 25% = 1/4, 37,5% = 3/8.',
+  'Perkalian: ×5 = ×10 ÷ 2, ×25 = ×100 ÷ 4, ×99 = ×100 lalu kurangi sekali.',
+  'Jika pilihan jawaban berjauhan, cukup bulatkan dan perkirakan.'],
+ 'tiu-perbandingan':[
+  'Cari nilai "1 bagian" dulu dari jumlah atau selisih.',
+  'Harga naik x% → harga lama = harga baru ÷ (1 + x%).',
+  'Diskon x% → harga awal = harga akhir ÷ (1 − x%).',
+  'Persentase untung atau kenaikan selalu dibagi angka awal.'],
+ 'tiu-cerita':[
+  'Masukkan pilihan jawaban ke soal, mulai dari pilihan tengah.',
+  'Waktu = jarak ÷ kecepatan. Berpapasan = kecepatan dijumlah. Menyusul = kecepatan dikurang.',
+  'Dua pekerja: (a × b) ÷ (a + b). Banyak orang × hari selalu tetap.',
+  'Soal rata-rata: hitung jumlahnya dulu (rata-rata × banyak data).'],
+ 'tkp-pelayanan':[
+  'Nilai 5 biasanya memuat tiga hal: empati + tetap sesuai aturan + solusi sampai tuntas.',
+  'Nilai 1: menolak melayani, menyalahkan warga, atau menerima imbalan.'],
+ 'tkp-jejaring':[
+  'Urutan nilai: menghindar (1) → menunggu (2) → bertindak seadanya (3) → proaktif (4) → proaktif dan menjaga hubungan lewat jalur resmi (5).'],
+ 'tkp-sosbud':[
+  'Nilai 5: aktif berbaur, menghargai perbedaan, dan mengajak orang lain.',
+  'Coret: menjaga jarak, bergaul dengan kelompok sendiri saja, ikut menertawakan.'],
+ 'tkp-tik':[
+  'Nilai 5: mau belajar teknologi, memakainya agar kerja lebih cepat, dan membantu rekan.',
+  'Soal keamanan data: jangan klik/bagikan → lapor tim TI → ingatkan rekan.'],
+ 'tkp-profesional':[
+  'Nilai 5: bertanggung jawab, jujur, berkomunikasi dengan atasan, dan mencegah kesalahan terulang.',
+  'Coret: mengeluh, menolak tugas, melempar ke rekan, menutupi kesalahan.'],
+ 'tkp-radikal':[
+  'Urutan nilai: ikut menyebarkan (1) → diam (2) → menolak untuk diri sendiri (3) → mengingatkan (4) → tidak menyebarkan + mengingatkan + melapor lewat jalur resmi (5).']
 };
 
-/* strategi umum mengerjakan SKD */
 const STRATEGI=[
- ['Bagi waktu 100 menit','Rata-rata hanya 54 detik per soal. Patokan: TWK 30 soal ± 20 menit, TIU 35 soal ± 45 menit, TKP 45 soal ± 25 menit, sisa 10 menit untuk soal yang ditandai ragu.'],
- ['Urutan mengerjakan','Banyak peserta mengerjakan TKP dulu (cepat dan pasti dapat poin), lalu TWK, dan TIU terakhir. Yang penting: jangan sampai ada soal kosong, karena salah dan kosong sama-sama 0 poin.'],
- ['Aturan 1 menit','Jika soal belum ketemu jawabannya dalam ± 1 menit, isi tebakan terbaik, tandai ragu, lalu lanjut. Kembali ke soal itu di akhir. Soal hitungan panjang jangan dikerjakan di awal.'],
- ['Eliminasi dulu','Coret pilihan yang jelas salah. Dari 5 pilihan tersisa 2, peluang benar naik dari 20% ke 50%.'],
- ['Kerjakan dari pilihan','Untuk soal cerita dan persamaan, masukkan pilihan jawaban ke soal (mulai dari pilihan tengah). Sering lebih cepat daripada menyusun rumus.'],
- ['Kejar ambang batas TIU','TIU paling sering membuat peserta gugur. Target aman: minimal 17 soal benar (85 poin) dari 35. Kuasai dulu deret, silogisme, dan hitungan dasar karena polanya berulang.'],
- ['TKP: baca semua pilihan','Pilihan nilai 5 biasanya paling lengkap: empati + taat aturan + solusi + tindak lanjut. Jika dua pilihan mirip, pilih yang lebih proaktif dan melibatkan jalur resmi.'],
- ['Latihan berwaktu','Kerjakan simulasi penuh 100 menit minimal seminggu sekali, lalu ulangi soal yang salah lewat menu "Soal yang perlu diulang".']
+ ['Bagi waktu 100 menit',['Rata-rata 54 detik per soal.','Patokan: TWK ± 20 menit, TIU ± 45 menit, TKP ± 25 menit.','Sisakan 10 menit untuk soal yang ditandai ragu.']],
+ ['Urutan mengerjakan',['Banyak peserta mulai dari TKP, lalu TWK, dan TIU terakhir.','Jangan ada soal kosong: salah dan kosong sama-sama 0 poin.']],
+ ['Aturan 1 menit',['Belum ketemu dalam ± 1 menit? Isi tebakan terbaik, tandai ragu, lanjut.','Kembali ke soal itu di akhir.']],
+ ['Eliminasi pilihan',['Coret pilihan yang jelas salah dulu.','Tersisa 2 pilihan = peluang benar 50%.']],
+ ['Kejar ambang batas TIU',['TIU paling sering membuat peserta gugur.','Target aman: minimal 17 soal benar dari 35.','Kuasai deret, silogisme, dan hitungan dasar karena polanya berulang.']],
+ ['Latihan rutin',['Simulasi penuh 100 menit minimal seminggu sekali.','Ulangi soal yang salah lewat menu "Soal yang perlu diulang".']]
 ];
 
 /* ratakan ke satu bank soal, lalu acak urutan pilihan (tetap sama tiap dibuka) agar letak kunci tidak berpola */
@@ -1672,13 +1745,11 @@ function renderHome(){
         <div class="keys"><span><kbd>A</kbd>–<kbd>E</kbd> pilih jawaban</span><span><kbd>←</kbd><kbd>→</kbd> pindah soal</span></div>
       </section>
     </div>
-    <section class="panel">
-      <span class="label">Strategi mengerjakan SKD</span>
-      <h2>Cara cepat dan pembagian waktu</h2>
-      <div class="strat">${STRATEGI.map(([a,b])=>`<div><b>${a}</b><p>${b}</p></div>`).join('')}</div>
-      <details class="others"><summary>Cara cepat per materi (${Object.keys(CEPAT).length} materi)</summary>
-        <div class="cepat-list" style="margin-top:8px">${ORDER.map(S=>`<span class="label" style="margin-top:8px">${S} · ${SEC[S].name}</span>`+Object.keys(CEPAT).filter(k=>k.startsWith(S.toLowerCase()+'-')).map(k=>`<details><summary>${TIPS[k][0]}</summary><p>${CEPAT[k]}</p></details>`).join('')).join('')}</div>
-      </details>
+    <section class="panel" style="border-color:var(--warn)">
+      <span class="label" style="color:var(--warn)">Panduan</span>
+      <h2>Cara cepat mengerjakan SKD</h2>
+      <p>Strategi waktu 100 menit dan trik singkat untuk ${Object.keys(CEPAT).length} materi TWK, TIU, dan TKP, disusun per poin agar mudah dibaca.</p>
+      <div class="row"><button class="btn" data-guide="strategi" style="border-color:var(--warn)">Buka panduan cara cepat</button></div>
     </section>
     <section class="panel">
       <span class="label">Format SKD CPNS asli</span>
@@ -1735,10 +1806,8 @@ function feedbackHTML(q,my){
   }
   const c=CARA[q.id];
   if(c)h+=`<div class="steps"><span class="label">Cara pengerjaan</span><ol>${c[0].map(x=>`<li>${x}</li>`).join('')}</ol></div>`;
-  const f=(c&&c[1])||CEPAT[q.t];
-  if(f)h+=`<div class="fast"><span class="label">Cara cepat${c&&c[1]?'':' · '+(tip?tip[0]:'')}</span><p>${f}</p></div>`;
-  if(c&&c[1]&&CEPAT[q.t])h+=`<details class="others"><summary>Trik umum ${tip?tip[0].toLowerCase():''}</summary><p style="margin:6px 0 0;font-size:14px">${CEPAT[q.t]}</p></details>`;
-  if(tip)h+=`<div class="tip"><span class="label">Materi · ${tip[0]}</span><p>${tip[1]}</p></div>`;
+  h+=`<div class="fast"><span class="label">Cara cepat</span>${c&&c[1]?`<p>${c[1]}</p>`:`<ul>${(CEPAT[q.t]||[]).map(x=>`<li>${x}</li>`).join('')}</ul>`}
+    <button class="guide-link" data-guide="${q.t}">Buka panduan cara cepat: ${tip?tip[0]:''} →</button></div>`;
   return h;
 }
 
@@ -1869,7 +1938,7 @@ function renderResult(r){
       <button class="btn" id="home">Beranda</button>
     </div>
     ${topics.length?`<section class="panel"><span class="label">Materi yang perlu dipelajari</span>
-      <div class="topics">${topics.map(([t,c])=>`<details class="topic"><summary><span>${TIPS[t][0]}</span><span class="mono cnt">${c} soal</span></summary><p>${TIPS[t][1]}</p>${CEPAT[t]?`<p><b>Cara cepat:</b> ${CEPAT[t]}</p>`:''}</details>`).join('')}</div></section>`:''}
+      <div class="topics">${topics.map(([t,c])=>`<details class="topic"><summary><span>${TIPS[t][0]}</span><span class="mono cnt">${c} soal</span></summary><p>${TIPS[t][1]}</p><p><button class="guide-link" data-guide="${t}">Lihat cara cepatnya →</button></p></details>`).join('')}</div></section>`:''}
     <section class="review">
       <div class="row" style="justify-content:space-between"><span class="label">Pembahasan</span>
         <div class="chips sm"><button class="chip ${revFilter==='wrong'?'on':''}" data-f="wrong">Belum maksimal (${notReview.length})</button><button class="chip ${revFilter==='all'?'on':''}" data-f="all">Semua (${st.ids.length})</button></div></div>
@@ -1892,7 +1961,7 @@ function renderResult(r){
 
 /* ================= KEYBOARD ================= */
 document.addEventListener('keydown',e=>{
-  if(!st||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(!st||e.ctrlKey||e.metaKey||e.altKey||document.getElementById('guide'))return;
   if(!document.querySelector('.qcard'))return;
   const k=e.key.toLowerCase();
   if(k.length===1&&'abcde'.includes(k)){choose('abcde'.indexOf(k));return}
@@ -1900,8 +1969,36 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft'){go(st.cur-1);return}
 });
 
+/* ================= PANDUAN CARA CEPAT ================= */
+let guideTab='strategi';
+function openGuide(topic){
+  const tab=topic==='strategi'||!topic?'strategi':topic.split('-')[0].toUpperCase();
+  guideTab=tab;renderGuide(topic&&topic!=='strategi'?topic:null);
+}
+function renderGuide(focus){
+  let g=document.getElementById('guide');
+  if(!g){g=document.createElement('div');g.id='guide';g.className='guide';g.setAttribute('role','dialog');g.setAttribute('aria-label','Panduan cara cepat');document.body.appendChild(g);document.body.style.overflow='hidden'}
+  const tabs=[['strategi','Strategi waktu'],['TWK','TWK'],['TIU','TIU'],['TKP','TKP']];
+  let body='';
+  if(guideTab==='strategi'){
+    body=STRATEGI.map(([t,pts],i)=>`<section class="gcard"><span class="gnum">${String(i+1).padStart(2,'0')}</span><h3>${t}</h3><ul>${pts.map(x=>`<li>${x}</li>`).join('')}</ul></section>`).join('');
+  }else{
+    const keys=Object.keys(CEPAT).filter(k=>k.startsWith(guideTab.toLowerCase()+'-'));
+    body=`<p class="note">${SEC[guideTab].name} · ${keys.length} materi. Bagian abu-abu adalah inti materinya, poin di bawahnya adalah cara cepatnya.</p>`+
+      keys.map((k,i)=>`<section class="gcard ${k===focus?'hl':''}" id="g-${k}"><span class="gnum">${guideTab} · ${String(i+1).padStart(2,'0')}</span><h3>${TIPS[k][0]}</h3><p class="inti">${TIPS[k][1]}</p><span class="label" style="color:var(--warn)">Cara cepat</span><ul>${CEPAT[k].map(x=>`<li>${x}</li>`).join('')}</ul></section>`).join('');
+  }
+  g.innerHTML=`<div class="gin"><div class="ghead"><div class="row"><h2>Panduan cara cepat</h2><button class="btn" id="g-close">Tutup ✕</button></div>
+    <div class="chips sm" role="tablist">${tabs.map(([v,t])=>`<button class="chip ${v===guideTab?'on':''}" data-gtab="${v}" role="tab" aria-selected="${v===guideTab}">${t}</button>`).join('')}</div></div>${body}</div>`;
+  g.querySelector('#g-close').onclick=closeGuide;
+  g.querySelectorAll('[data-gtab]').forEach(b=>b.onclick=()=>{guideTab=b.dataset.gtab;renderGuide(null);g.scrollTop=0});
+  if(focus){const el=g.querySelector('#g-'+focus);if(el)setTimeout(()=>el.scrollIntoView({block:'start'}),0)}else g.scrollTop=0;
+}
+function closeGuide(){const g=document.getElementById('guide');if(g){g.remove();document.body.style.overflow=''}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-guide]');if(b){e.preventDefault();openGuide(b.dataset.guide)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('guide'))closeGuide()},true);
+
 /* tombol Back di Android */
-window.__back=function(){if(st){renderHome();window.scrollTo(0,0);return true}return false};
+window.__back=function(){if(document.getElementById('guide')){closeGuide();return true}if(st){renderHome();window.scrollTo(0,0);return true}return false};
 
 renderHome();
 </script>
