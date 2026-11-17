@@ -6,6 +6,8 @@ Latihan Seleksi Kompetensi Dasar (SKD) CPNS dengan format seperti CAT BKN.
 - **Mode Acak** mengambil 110 soal dari seluruh bank (550 soal).
 - **Latihan per subtes** (TWK, TIU, TKP) tanpa batas waktu, jawaban langsung diperiksa.
 - **Pembahasan setiap pilihan.** TWK/TIU: kenapa pilihan salah dan kenapa kunci benar. TKP: nilai 1–5 setiap pilihan beserta alasannya.
+- **Cara pengerjaan langkah demi langkah** untuk 122 soal TIU hitungan, deret, dan logika, plus **cara cepat** untuk setiap materi TWK, TIU, dan TKP.
+- **Strategi mengerjakan SKD**: pembagian waktu 100 menit, urutan mengerjakan, dan trik eliminasi.
 - **Nilai dikonversi ke skala asli** (TWK 150, TIU 175, TKP 225) dan dicek terhadap ambang batas 65 / 80 / 166 (KepmenPANRB No. 321 Tahun 2024, formasi umum).
 - Simulasi yang terputus bisa dilanjutkan. Riwayat skor dan soal yang perlu diulang tersimpan di perangkat.
 - Bisa dipasang di HP sebagai aplikasi dan dipakai offline.

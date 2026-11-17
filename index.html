@@ -103,6 +103,19 @@ kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border
 .tip{border:1px solid var(--drop);border-left-width:4px;border-radius:6px;padding:12px 14px;display:grid;gap:4px;font-size:14px}
 .tip .label{color:var(--drop)}
 .tip p{margin:0;max-width:72ch}
+.steps{border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:grid;gap:6px;font-size:14px;background:var(--card)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:4px}
+.fast{border:1px solid var(--warn);border-left-width:4px;border-radius:6px;padding:12px 14px;display:grid;gap:4px;font-size:14px;background:var(--warn-soft)}
+.fast .label{color:var(--warn)}
+.fast p{margin:0;max-width:72ch}
+.strat{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.strat div{border-left:3px solid var(--drop);padding:2px 0 2px 12px}
+.strat b{display:block;font-size:14px;margin-bottom:2px}
+.strat p{margin:0;font-size:14px;color:var(--muted)}
+.cepat-list{display:grid;gap:6px}
+.cepat-list details{border-bottom:1px solid var(--line);padding-block:6px}
+.cepat-list summary{cursor:pointer;font-weight:500}
+.cepat-list p{margin:6px 0 4px;font-size:14px;color:var(--muted);max-width:76ch}
 .nav{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .flag{border:1px solid var(--line);background:transparent;border-radius:6px;padding:5px 10px;font-size:13px}
 .flag.on{border-color:var(--warn);color:var(--warn)}
@@ -1359,6 +1372,172 @@ const PK5=[
 
 PACKS.push({name:'Paket 3',items:PK3},{name:'Paket 4',items:PK4},{name:'Paket 5',items:PK5});
 
+/* ================= CARA PENGERJAAN & CARA CEPAT ================= */
+/* per soal TIU: [langkah-langkah, cara cepat] */
+const CARA={
+1033:[['Tulis premis: hujan → basah.','Fakta: jalan tidak basah (akibatnya tidak terjadi).','Jika akibat tidak terjadi, sebabnya pasti tidak terjadi → hujan tidak turun.'],'Pola "Jika P maka Q; tidak Q" selalu → "tidak P". Langsung cari pilihan yang menyangkal P.'],
+1034:[['Gambar 5 kotak: _ _ _ _ _.','Isi yang pasti: A=1, C=2, D=5.','Sisa B dan E untuk posisi 3 dan 4.','E tidak boleh di sebelah C (posisi 3), jadi E=4 dan B=3.'],'Isi dulu semua syarat "pasti" (ujung, tepat di sebelah), baru syarat larangan.'],
+1035:[['Hitung selisih: 6−3=3, 11−6=5, 18−11=7, 27−18=9.','Selisihnya naik 2 (3,5,7,9), berikutnya 11.','27 + 11 = 38.'],'Polanya juga n² + 2 (1+2, 4+2, 9+2, …). Suku ke-6: 36 + 2 = 38.'],
+1036:[['Ubah huruf ke angka: A=1, C=3, F=6, J=10, O=15.','Selisih: +2, +3, +4, +5 → berikutnya +6.','15 + 6 = 21 = U.'],'Hafalkan patokan huruf: E=5, J=10, O=15, T=20, Y=25. Dari O (15) maju 6 → U.'],
+1037:[['25% × 480 = 480 ÷ 4 = 120.','0,15 × 200 = 30.','120 + 30 = 150.'],'25% = bagi 4. 0,15 × 200 = 15 × 2 = 30.'],
+1038:[['Selisih bagian: 5 − 3 = 2 bagian.','2 bagian = Rp60.000 → 1 bagian = Rp30.000.','Jumlah = 3 + 5 = 8 bagian = 8 × 30.000 = Rp240.000.'],'Rumus: jumlah = (jumlah perbandingan ÷ selisih perbandingan) × selisih uang = (8 ÷ 2) × 60.000.'],
+1039:[['Waktu = jarak ÷ kecepatan = 150 ÷ 60 = 2,5 jam.','2,5 jam = 2 jam 30 menit.','07.30 + 2.30 = 10.00.'],'60 km/jam = 1 km per menit, jadi 150 km = 150 menit = 2,5 jam.'],
+1043:[['Premis 1: semua yang bernapas dengan paru-paru bukan ikan.','Paus bernapas dengan paru-paru.','Jadi paus bukan ikan.'],'Kalau ada premis "Tidak ada A yang B" dan "X adalah B", jawabannya selalu "X bukan A".'],
+1044:[['Tulis urutan dari setiap pernyataan: Rani > Sinta, Sinta > Tono, Umar > Rani.','Gabungkan: Umar > Rani > Sinta > Tono.','Vina di antara Sinta dan Rani: Umar > Rani > Vina > Sinta > Tono.','Tertinggi ketiga = Vina.'],'Buat garis vertikal dan taruh nama satu per satu. Jangan menghafal di kepala.'],
+1052:[['Premis: lulus SKD → ikut SKB.','Fakta: Dina tidak ikut SKB.','Akibat tidak terjadi → sebab tidak terjadi → Dina tidak lulus SKD.'],'Modus tollens: "Jika P maka Q; tidak Q" → "tidak P".'],
+1053:[['P = BBM naik, Q = ongkos naik, R = sayur naik.','P → Q dan Q → R.','Disambung: P → R.'],'Pola rantai (silogisme): ambil awal premis pertama dan akhir premis kedua.'],
+1054:[['Beberapa atlet = mahasiswa.','Semua mahasiswa wajib ujian.','Atlet yang mahasiswa pasti wajib ujian → beberapa atlet wajib ujian.'],'"Sebagian" + "Semua" → kesimpulan tetap "sebagian". Coret pilihan yang memakai "semua".'],
+1055:[['Buat tabel nama × warna.','Budi = hijau.','Andi bukan merah/biru dan hijau sudah dipakai → Andi kuning.','Dewi bukan biru → Dewi merah.','Sisa: Citra biru.'],'Mulai dari orang yang pilihannya paling sedikit.'],
+1056:[['Isi pasti: T=1, P=5.','S tepat di kiri P → S=4.','Sisa Q dan R di posisi 2 dan 3, Q di kiri R → Q=2, R=3.'],'Isi ujung dulu, lalu yang "tepat di sebelah".'],
+1057:[['Bandingkan dengan pembagian: 2÷1=2, 6÷2=3, 24÷6=4, 120÷24=5.','Pengalinya naik 1, berikutnya ×6.','120 × 6 = 720.'],'Ini deret faktorial: 1!, 2!, 3!, 4!, 5!, 6! = 720.'],
+1058:[['Selisih: +2, +3, +5, +7, +11.','Selisihnya bilangan prima, berikutnya 13.','33 + 13 = 46.'],'Jika selisih tidak naik teratur, cek apakah bilangan prima (2,3,5,7,11,13,17).'],
+1059:[['Z=26, X=24, U=21, Q=17, L=12.','Mundur 2, 3, 4, 5 → berikutnya mundur 6.','12 − 6 = 6 = F.'],'Untuk huruf dari belakang, hitung mundur dari Z=26 atau pakai patokan L=12.'],
+1060:[['0,25 × 0,4 = 0,1.','0,1 ÷ 0,02 = 10 ÷ 2 = 5.'],'Kalikan pembilang dan penyebut dengan 100: 10 ÷ 2 = 5.'],
+1061:[['2x² = 2 × 9 = 18.','−3xy = −3 × 3 × (−2) = +18.','y² = (−2)² = 4.','18 + 18 + 4 = 40.'],'Hati-hati tanda: minus × minus = plus. Tulis tiap suku terpisah.'],
+1062:[['Jarak sebenarnya = 6 × 250.000 = 1.500.000 cm.','1 km = 100.000 cm → 1.500.000 ÷ 100.000 = 15 km.'],'Skala 1 : 250.000 berarti 1 cm = 2,5 km. Jadi 6 cm = 15 km.'],
+1063:[['Saling mendekat → kecepatan dijumlah: 60 + 40 = 100 km/jam.','Waktu = 240 ÷ 100 = 2,4 jam.','0,4 jam = 0,4 × 60 = 24 menit.'],'Berpapasan = jumlah kecepatan. Menyusul = selisih kecepatan.'],
+1064:[['3b + 2p = 27.000 dan 2b + 3p = 23.000.','Jumlahkan: 5b + 5p = 50.000 → b + p = 10.000.','Kurangkan: b − p = 4.000.','b = (10.000 + 4.000) ÷ 2 = 7.000.'],'Jika koefisien tertukar (3–2 dan 2–3), jumlahkan dan kurangkan kedua persamaan.'],
+2033:[['Premis 1: disiplin → tunjangan penuh. Kontraposisi: tidak tunjangan penuh → tidak disiplin.','Sebagian pegawai keuangan tidak dapat tunjangan penuh.','Jadi sebagian pegawai keuangan tidak disiplin.'],'"Semua A adalah B" sama artinya "yang bukan B pasti bukan A".'],
+2034:[['P–Q harus berurutan: Senin–Selasa atau Kamis–Jumat (Rabu milik R).','Coba Kamis–Jumat: sisa Senin dan Selasa untuk S dan T. T tidak Senin → T Selasa, S Senin (dilarang). Gagal.','Jadi P Senin, Q Selasa. Sisa Kamis dan Jumat: T tidak Jumat → T Kamis.'],'Uji kemungkinan pasangan berurutan dulu. Satu kemungkinan gugur, sisanya jawaban.'],
+2035:[['Selisih: +1, +2, +4, +8 (berlipat dua).','Berikutnya +16.','17 + 16 = 33.'],'Atau pola ×2 − 1: 17 × 2 − 1 = 33.'],
+2036:[['Deretnya panjang (6 suku), pisahkan suku ganjil dan genap.','Ganjil: 4, 8, 12 (+4). Genap: 10, 15, 20 (+5).','Suku ke-7 adalah suku ganjil: 12 + 4 = 16.'],'Jika naik-turun tidak beraturan, langsung coba deret loncat.'],
+2037:[['1/4 = 0,25.','12,5% = 0,125.','0,25 + 0,375 + 0,125 = 0,75.'],'Hafalkan: 1/8 = 0,125 = 12,5%, 3/8 = 0,375. Jadi 2/8 + 3/8 + 1/8 = 6/8 = 0,75.'],
+2038:[['Harga jual = 20 × 15.000 = 300.000.','Untung = 300.000 − 240.000 = 60.000.','% untung = 60.000 ÷ 240.000 × 100% = 25%.'],'Harga beli per kg = 12.000. Untung 3.000 per kg = 3/12 = 1/4 = 25%.'],
+2039:[['Misal umur anak x, ayah 3x.','10 tahun lagi: 3x + 10 = 2(x + 10).','3x + 10 = 2x + 20 → x = 10.'],'Cek dari pilihan: anak 10, ayah 30. 10 tahun lagi 20 dan 40 → 2 kali. Cocok.'],
+2040:[['Selisih: +4, +6, +8, +10 → berikutnya +12.','30 + 12 = 42.'],'Pola n × (n+1): 1×2, 2×3, 3×4, 4×5, 5×6, 6×7 = 42.'],
+2041:[['Selisih: +1, +4, +9, +16.','Selisihnya bilangan kuadrat, berikutnya 25.','33 + 25 = 58.'],'Kenali deret kuadrat 1, 4, 9, 16, 25, 36 di dalam selisih.'],
+2042:[['√144 = 12.','2³ = 8, lalu 8 × 3 = 24.','12 + 24 − 10 = 26.'],'Urutan: akar/pangkat → kali/bagi → tambah/kurang.'],
+2043:[['Total pekerjaan = 6 × 20 = 120 orang-hari.','Pekerja untuk 15 hari = 120 ÷ 15 = 8 orang.','Tambahan = 8 − 6 = 2 orang.'],'Pekerja × hari selalu tetap (berbalik nilai).'],
+2044:[['Jumlah awal = 5 × 70 = 350.','Jumlah baru = 6 × 72 = 432.','Nilai siswa baru = 432 − 350 = 82.'],'Cara cepat: nilai baru = rata-rata baru + (banyak data lama × kenaikan) = 72 + 5 × 2 = 82.'],
+2052:[['Semua mawar berduri.','Sebagian tanaman di taman = mawar.','Tanaman yang mawar pasti berduri → sebagian tanaman di taman berduri.'],'"Sebagian" + "Semua" → "Sebagian".'],
+2053:[['Premis: Semarang atau Solo (salah satu pasti).','Bukan Semarang.','Jadi Solo.'],'Pola "P atau Q; bukan P" → "Q".'],
+2054:[['Tidak ada pegawai malas yang dipromosikan → yang dipromosikan pasti tidak malas.','Sebagian pegawai bagian umum dipromosikan.','Jadi sebagian pegawai bagian umum tidak malas.'],'"Tidak ada A yang B" bisa dibalik: "Tidak ada B yang A".'],
+2055:[['Ali = 2.','Dewi tidak di sebelah Ali → Dewi tidak di 1 atau 3, jadi Dewi 4 atau 5.','Budi–Sri harus berurutan. Kotak kosong: 1, 3, 4, 5.','Candra di ujung. Jika Candra 5, Dewi 4, sisa 1 dan 3 tidak berurutan → gagal.','Jadi Candra 1, Budi 3, Sri 4, Dewi 5.'],'Pasangan "tepat di sebelah" butuh dua kotak berurutan. Cari di mana dua kotak kosong berurutan tersedia.'],
+2056:[['Y bukan PWK dan bukan Sipil → Y Arsitektur.','X bukan Sipil, Arsitektur sudah dipakai → X PWK.','Z Teknik Sipil.'],'Mulai dari orang dengan larangan terbanyak.'],
+2057:[['Pola: ×2, −2, ×2, −2, ×2, …','7×2=14, −2=12, ×2=24, −2=22, ×2=44.','Berikutnya −2: 44 − 2 = 42.'],'Jika naik besar lalu turun sedikit bergantian, cari dua operasi yang bergantian.'],
+2058:[['Setiap suku = jumlah dua suku sebelumnya.','8 + 13 = 21.'],'Deret Fibonacci: hafalkan 1, 1, 2, 3, 5, 8, 13, 21, 34.'],
+2059:[['Selisih: −5, −10, −15, −20.','Berikutnya −25.','50 − 25 = 25.'],'Selisih naik 5 setiap langkah.'],
+2060:[['3/5 × 400 = 240.','15% × 240 = 36.'],'15% dari 240 = 10% (24) + 5% (12) = 36.'],
+2061:[['2.024 × 25 = 2.024 × 100 ÷ 4.','202.400 ÷ 4 = 50.600.'],'× 25 = × 100 ÷ 4. × 5 = × 10 ÷ 2. × 125 = × 1000 ÷ 8.'],
+2062:[['Setelah diskon 20%, harga = 80% harga awal.','80% × harga awal = 96.000.','Harga awal = 96.000 ÷ 0,8 = 120.000.'],'96.000 ÷ 8 × 10 = 12.000 × 10 = 120.000.'],
+2063:[['4 hari pertama: 4 × 150 = 600 bangunan.','Sisa: 1.200 − 600 = 600 bangunan.','Waktu sisa: 600 ÷ 100 = 6 hari.','Total: 4 + 6 = 10 hari.'],'Hitung per tahap, lalu jumlahkan waktunya.'],
+2064:[['Jumlah usia 4 orang = 4 × 25 = 100.','Tanpa orang 31 tahun: 100 − 31 = 69.','Rata-rata 3 orang = 69 ÷ 3 = 23.'],'Orang itu 6 tahun di atas rata-rata. Kelebihan 6 dibagi ke 3 orang = 2. Rata-rata turun 2 → 23.'],
+3040:[['Semua ASN wajib menaati kode etik.','Rudi ASN.','Jadi Rudi wajib menaati kode etik.'],'Pola dasar: "Semua A adalah B; X adalah A" → "X adalah B".'],
+3041:[['Rantai: listrik padam → komputer mati → layanan berhenti.','Fakta: layanan tidak berhenti.','Mundur: komputer tidak mati → listrik tidak padam.'],'Dalam rantai implikasi, ingkaran akibat terakhir membatalkan semua sebab di depannya.'],
+3042:[['Sebagian siswa suka matematika.','Semua yang suka matematika suka logika.','Siswa yang suka matematika pasti suka logika → sebagian siswa suka logika.'],'"Sebagian" + "Semua" → "Sebagian".'],
+3043:[['"Hanya yang membawa kartu boleh masuk" = jika masuk, pasti membawa kartu.','Tini masuk.','Jadi Tini membawa kartu.'],'"Hanya A yang B" artinya B → A. Kata "hanya" menandai syarat wajib.'],
+3044:[['Semua dokter sarjana.','Sebagian dokter penulis.','Dokter yang penulis pasti sarjana → sebagian penulis adalah sarjana.'],'Cari kelompok yang ada di kedua premis (dokter), lalu hubungkan dua kelompok lainnya dengan "sebagian".'],
+3045:[['D paling belakang (6).','E tepat di depan C: E–C.','A di belakang C, di depan B: C … A … B.','F tepat di belakang B: B–F.','Gabung: E, C, A, B, F, D.'],'Rangkai potongan urutan (E–C, B–F) dulu, lalu sambungkan.'],
+3046:[['N = Rabu.','L–M berurutan. Pilihan berurutan tanpa Rabu: Senin–Selasa saja.','L Senin, M Selasa, K Kamis.'],'Cari tempat yang masih punya dua hari berurutan.'],
+3047:[['Adi > Beni, Beni > Cici, Dodi > Adi.','Eka di antara Cici dan Beni.','Urutan: Dodi > Adi > Beni > Eka > Cici.','Paling pendek kedua = Eka.'],'Tulis dari atas ke bawah dalam satu kolom.'],
+3048:[['Perencanaan 3, Hukum 2, TI 5.','Sisa lantai 1 dan 4 untuk Keuangan dan Umum.','Keuangan di atas Umum → Keuangan 4, Umum 1.'],'Isi yang pasti dulu, sisa dua tempat diputuskan dengan satu syarat.'],
+3049:[['2², 3², 4², 5², 6².','Berikutnya 7² = 49.'],'Hafalkan kuadrat 1–20 dan pangkat tiga 1–10.'],
+3050:[['Setiap suku dibagi 3.','3 ÷ 3 = 1.'],'Deret turun yang terus membagi: cek rasio.'],
+3051:[['Pisahkan: suku ganjil 2, 4, 8, 16 (×2). Suku genap 5, 10, 15 (+5).','Suku ke-8 adalah suku genap: 15 + 5 = 20.'],'Deret 7 suku atau lebih yang naik-turun → pisahkan ganjil-genap.'],
+3052:[['Selisih: 2, 4, 8, 16 → berikutnya 32.','31 + 32 = 63.'],'Pola 2ⁿ − 1: 1, 3, 7, 15, 31, 63.'],
+3053:[['B=2, E=5, H=8, K=11, N=14.','Maju 3 setiap langkah: 14 + 3 = 17 = Q.'],'Selisih tetap → cukup hitung satu langkah.'],
+3054:[['Selisih: +1, +2, +3, +4 → berikutnya +5.','22 + 5 = 27.'],'Selisih naik 1 setiap langkah.'],
+3055:[['3/8 × 640 = 80 × 3 = 240.','12,5% × 320 = 320 ÷ 8 = 40.','240 − 40 = 200.'],'12,5% = 1/8. Bagi dengan 8 dulu baru kalikan.'],
+3056:[['(0,5)² = 0,25.','√0,49 = 0,7.','0,25 + 0,7 = 0,95.'],'√0,49: angka 49 → 7, jumlah desimal dibagi dua → 0,7.'],
+3057:[['7² = 49, 24² = 576.','49 + 576 = 625.','√625 = 25.'],'Hafalkan tripel Pythagoras: 3-4-5, 5-12-13, 7-24-25, 8-15-17.'],
+3058:[['3x − 2x = 5 + 7 → x = 12.','2x + 1 = 24 + 1 = 25.'],'Pindahkan semua x ke satu sisi, angka ke sisi lain.'],
+3059:[['Total bagian = 3 + 5 = 8.','1 bagian = 40 ÷ 8 = 5.','Perempuan = 5 × 5 = 25.'],'Bagian yang ditanya ÷ total bagian × jumlah = 5/8 × 40.'],
+3060:[['Setelah naik 20%, harga = 120% harga lama.','Harga lama = 14.400 ÷ 1,2 = 12.000.'],'14.400 ÷ 12 × 10 = 1.200 × 10 = 12.000.'],
+3061:[['Satu mesin per jam = 600 ÷ (4 × 5) = 30 buku.','6 mesin per jam = 180 buku.','900 ÷ 180 = 5 jam.'],'Rumus: (M₁ × J₁) ÷ B₁ = (M₂ × J₂) ÷ B₂ → (4×5)/600 = (6×J)/900 → J = 5.'],
+3062:[['Selisih tabungan awal = 120.000.','Ali mengejar Rp5.000 per hari (15.000 − 10.000).','Waktu = 120.000 ÷ 5.000 = 24 hari.'],'Soal "kapan sama": selisih awal ÷ selisih per hari.'],
+3063:[['Waktu: 08.15 → 11.45 = 3 jam 30 menit = 3,5 jam.','Kecepatan = 280 ÷ 3,5 = 80 km/jam.'],'280 ÷ 3,5 = 560 ÷ 7 = 80 (kalikan keduanya dengan 2).'],
+3064:[['Suka kopi atau teh = 25 + 20 − 8 = 37.','Tidak suka keduanya = 40 − 37 = 3.'],'Rumus himpunan: total = A + B − irisan + tidak keduanya.'],
+4040:[['Premis hanya menyebut kendaraan bermotor.','Sepeda bukan kendaraan bermotor → premis tidak mengatur sepeda.','Tidak dapat disimpulkan dari kedua premis.'],'Jika premis kedua mengingkari bagian depan (sebab), kesimpulannya hampir selalu "tidak dapat disimpulkan".'],
+4041:[['Rantai: rajin → lulus → diterima.','Tono tidak diterima.','Mundur: tidak lulus → tidak rajin.'],'Ingkaran ujung rantai membatalkan pangkal rantai.'],
+4042:[['Premis: tepat waktu ATAU ditegur.','Budi tidak ditegur.','Jadi Budi tepat waktu.'],'"P atau Q; bukan Q" → "P".'],
+4043:[['Sebagian pejabat dosen.','Semua dosen S-2.','Pejabat yang dosen pasti S-2 → sebagian pejabat S-2.'],'"Sebagian" + "Semua" → "Sebagian".'],
+4044:[['Yang menyusui pasti bukan burung.','Semua kelelawar menyusui.','Jadi kelelawar bukan burung.'],'"Tidak ada A yang B; semua C adalah B" → "tidak ada C yang A".'],
+4045:[['P = 1, S = 4.','T tidak di sebelah S → T bukan 3 atau 5, jadi T di 2 atau 6.','T lebih kiri dari Q → T bukan 6, jadi T = 2.','Q–R berurutan di sisa kotak 3, 5, 6 → Q–R di 5–6.','Sisa kursi 3 untuk U.'],'Tandai kotak terlarang untuk setiap orang, lalu lihat kotak yang tersisa.'],
+4046:[['C sebelum A, A sebelum B, B sebelum D, E sebelum C.','Rangkai: E, C, A, B, D.','Keempat = B.'],'Kata "sebelum/setelah" bisa langsung dirangkai menjadi satu garis.'],
+4047:[['Tidak memilih Statistik → GIS tidak boleh dipilih.','Pilihan tersisa: Hukum, Ekonomi, Sosiologi. Harus pilih dua.','Hukum dan Ekonomi tidak boleh bersamaan → salah satu pasangannya pasti Sosiologi.'],'Coret pilihan yang gugur, lalu lihat pilihan yang muncul di semua kemungkinan.'],
+4048:[['Z bukan siang dan bukan malam → Z pagi.','Y bukan malam, pagi sudah dipakai → Y siang.','X malam.'],'Mulai dari orang dengan larangan terbanyak.'],
+4049:[['Setiap suku dikali 2.','80 × 2 = 160.'],'Rasio tetap → cukup cek dua suku.'],
+4050:[['1³, 2³, 3³, 4³.','Berikutnya 5³ = 125.'],'Hafalkan pangkat tiga: 1, 8, 27, 64, 125, 216, 343.'],
+4051:[['Selisih: −2, −4, −6, −8.','Berikutnya −10: 30 − 10 = 20.'],'Selisih bertambah 2.'],
+4052:[['Selisih: +2, +4, +6, +8.','Berikutnya +10: 23 + 10 = 33.'],'Selisih bertambah 2.'],
+4053:[['A=1, B=2, D=4, G=7, K=11.','Maju 1, 2, 3, 4 → berikutnya 5.','11 + 5 = 16 = P.'],'Patokan: J=10, O=15. K (11) + 5 = P (16).'],
+4054:[['Pola: ÷2, ×4, ÷2, ×4, ÷2, …','6÷2=3, ×4=12, ÷2=6, ×4=24, ÷2=12.','Berikutnya ×4: 12 × 4 = 48.'],'Atau pisahkan: suku ganjil 6, 12, 24, 48 (×2).'],
+4055:[['12,5% × 64 = 64 ÷ 8 = 8.','3/4 × 20 = 15.','8 + 15 = 23.'],'12,5% = 1/8.'],
+4056:[['999 × 12 = (1.000 − 1) × 12.','12.000 − 12 = 11.988.'],'Angka dekat 1.000, 100, atau 10 → bulatkan lalu kurangi.'],
+4057:[['Samakan penyebut 12: 8/12 + 9/12 − 5/12.','= 12/12 = 1.'],'KPK 3, 4, 12 adalah 12.'],
+4058:[['(a+b)² = 9² = 81.','(a−b)² = (−1)² = 1.','81 − 1 = 80.'],'Rumus: (a+b)² − (a−b)² = 4ab = 4 × 4 × 5 = 80.'],
+4059:[['Total bagian = 5 + 3 = 8.','1 bagian = 32 ÷ 8 = 4.','Kakak = 5 × 4 = 20 tahun.'],'5/8 × 32 = 20.'],
+4060:[['Bunga setahun = 6% × 5.000.000 = 300.000.','8 bulan = 8/12 tahun.','Bunga = 8/12 × 300.000 = 200.000.'],'Bunga per bulan = 0,5% × 5.000.000 = 25.000. × 8 = 200.000.'],
+4061:[['Ubah panjang dulu: 4 cm × 500 = 2.000 cm = 20 m.','6 cm × 500 = 3.000 cm = 30 m.','Luas = 20 × 30 = 600 m².'],'Selalu ubah panjang ke ukuran sebenarnya dulu, baru hitung luasnya.'],
+4062:[['Per menit: A = 1/20, B = 1/30.','Bersama = 3/60 + 2/60 = 5/60 = 1/12.','Penuh dalam 12 menit.'],'Rumus dua pekerja: (a × b) ÷ (a + b) = (20 × 30) ÷ 50 = 12.'],
+4063:[['Harga jual = 120% harga beli.','Harga beli = 300.000 ÷ 1,2 = 250.000.'],'300.000 ÷ 12 × 10 = 25.000 × 10 = 250.000.'],
+4064:[['Misal benar = b, salah = 42 − b.','4b − (42 − b) = 138.','5b − 42 = 138 → 5b = 180 → b = 36.'],'Cek dari pilihan: 36 benar, 6 salah → 144 − 6 = 138. Cocok.'],
+5040:[['Semua peserta membawa KTP.','Sebagian peserta membawa pensil.','Peserta yang membawa pensil juga membawa KTP → sebagian pembawa KTP membawa pensil.'],'Kelompok yang sama (peserta) menjadi penghubung.'],
+5041:[['Premis: libur → tutup.','Kantor buka (tidak tutup).','Jadi bukan hari libur.'],'Modus tollens: "Jika P maka Q; tidak Q" → "tidak P".'],
+5042:[['Teladan → disiplin.','Disiplin → tidak terlambat.','Teladan → tidak terlambat.'],'Rantai: sambungkan awal dan akhir.'],
+5043:[['Rantai: Ani pergi → Budi di rumah → Citra tidak pergi.','Citra pergi (ingkaran ujung).','Mundur: Budi tidak di rumah → Ani tidak pergi.'],'Ingkaran ujung rantai membatalkan pangkal rantai.'],
+5044:[['Premis: demam → suhu naik.','Fakta: suhu naik (akibat terjadi).','Suhu naik bisa karena sebab lain, jadi belum tentu demam.'],'"Jika P maka Q; Q terjadi" tidak memastikan P. Cari pilihan "belum tentu" atau "tidak dapat disimpulkan".'],
+5045:[['Putih = 1.','Merah–hitam–biru berurutan, hitam di tengah.','Jika di 2–4, hijau di 5 (ujung) → dilarang.','Jadi di 3–5, hijau di 2, hitam di 4.'],'Coba blok tiga mobil di setiap posisi yang mungkin dan cek syarat sisanya.'],
+5046:[['Kiki = 3.','Gita–Hadi berurutan, Joko sebelum Gita.','Gita–Hadi tidak bisa 1–2 (Joko harus sebelum Gita). Pasangan yang tersisa: 4–5.','Intan di ujung → Intan 1. Joko 2.'],'Tempatkan pasangan berurutan di sisa tempat yang memungkinkan.'],
+5047:[['Maya bukan dokter, bukan guru → insinyur.','Lina bukan guru → dokter.','Nita guru.'],'Mulai dari orang dengan larangan terbanyak.'],
+5048:[['Satu minggu = 7 hari. 100 ÷ 7 = 14 sisa 2.','Maju 2 hari dari Rabu: Kamis, Jumat.'],'Yang penting hanya sisa bagi 7.'],
+5049:[['Pengali: ×2, ×3, ×4, ×5 → berikutnya ×6.','240 × 6 = 1.440.'],'Cek rasio antarsuku jika angkanya melonjak cepat.'],
+5050:[['Selisih: +1, +2, +3, +4, +5 → berikutnya +6.','16 + 6 = 22.'],'Selisih naik 1.'],
+5051:[['Dibagi 2 terus.','8 ÷ 2 = 4.'],'Deret pangkat dua mundur: 2⁶, 2⁵, 2⁴, 2³, 2².'],
+5052:[['Pola: +5, −2, +5, −2, +5, …','14 − 2 = 12.'],'Atau pisahkan: suku ganjil 3, 6, 9, 12 (+3).'],
+5053:[['D=4, H=8, L=12, P=16.','Maju 4: 16 + 4 = 20 = T.'],'Kelipatan 4. Patokan T = 20.'],
+5054:[['Deret bilangan prima.','Setelah 13 adalah 17.'],'Hafalkan prima di bawah 50: 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47.'],
+5055:[['45% × 80 = 36.','80% × 45 = 36.','36 + 36 = 72.'],'a% dari b = b% dari a. Jadi hasilnya 2 × 36 = 72.'],
+5056:[['1,25 × 0,8 = 1.','0,5 ÷ 0,25 = 2.','1 + 2 = 3.'],'1,25 = 5/4 dan 0,8 = 4/5, hasil kalinya 1.'],
+5057:[['5! = 120, 3! = 6.','120 ÷ 6 = 20.'],'5! ÷ 3! = 5 × 4 = 20 (sisanya saling coret).'],
+5058:[['Jumlahkan: 3x = 12 → x = 4.','y = x − 1 = 3.','x × y = 12.'],'Jika koefisien y berlawanan (+y dan −y), langsung jumlahkan.'],
+5059:[['Pasir 5 bagian = 35 kg → 1 bagian = 7 kg.','Semen 2 bagian = 14 kg.'],'35 × 2/5 = 14.'],
+5060:[['Setelah diskon 30%: 500.000 × 0,7 = 350.000.','Pajak 10%: 350.000 × 1,1 = 385.000.'],'Kalikan langsung: 500.000 × 0,7 × 1,1 = 500.000 × 0,77 = 385.000.'],
+5061:[['Kenaikan = 9.200 − 8.000 = 1.200.','% = 1.200 ÷ 8.000 × 100% = 15%.'],'Selalu bagi dengan angka awal. 12 ÷ 80 = 3 ÷ 20 = 15%.'],
+5062:[['Misal lebar l, panjang 2l.','Keliling = 2(2l + l) = 6l = 60 → l = 10.','Panjang 20. Luas = 20 × 10 = 200 m².'],'Setengah keliling = p + l = 30, dengan p : l = 2 : 1 → 20 dan 10.'],
+5063:[['6 hari × 25 = 150 halaman.','Sisa 400 − 150 = 250.','250 ÷ 50 = 5 hari.','Total 6 + 5 = 11 hari.'],'Hitung per tahap, lalu jumlahkan waktunya.'],
+5064:[['Total bola = 4 + 6 = 10.','Peluang merah = 4/10 = 2/5.'],'Peluang = yang diinginkan ÷ semua kemungkinan.']
+};
+
+/* cara cepat per materi (dipakai untuk semua soal, termasuk TWK dan TKP) */
+const CEPAT={
+ 'twk-pancasila':'Hafalkan lambang berurutan "Bin-Ran-Ber-Ban-Pa": Bintang, Rantai, Beringin, Banteng, Padi-kapas. Bulu Garuda 17-8-19-45 = tanggal Proklamasi. Untuk soal pengamalan sila, cari kata kunci: ibadah/toleransi agama (1), kemanusiaan/menolong (2), persatuan/kepentingan bangsa (3), musyawarah (4), adil/tidak boros/hak orang lain (5).',
+ 'twk-uud':'Kelompokkan pasal: 1 (bentuk, kedaulatan, negara hukum) · 3 (MPR) · 4–17 (Presiden) · 20–22 (DPR, Perppu) · 23 (keuangan, BPK) · 24 (kehakiman) · 27–28J (warga negara dan HAM) · 29 (agama) · 30 (pertahanan) · 31–32 (pendidikan, budaya) · 33–34 (ekonomi, sosial) · 35–36C (bendera, bahasa, lambang, lagu) · 37 (perubahan UUD). Jembatan keledai 35–36B: "Ber-Ba-La-La" (Bendera, Bahasa, Lambang, Lagu).',
+ 'twk-sejarah':'Hafalkan garis waktu, bukan soal lepas: 1908 Budi Utomo → 1928 Sumpah Pemuda → 29 Mei–1 Juni 1945 BPUPKI I → 22 Juni Piagam Jakarta → 16 Agustus Rengasdengklok → 17 Agustus Proklamasi → 18 Agustus UUD disahkan → 1949 KMB/RIS → 1950 NKRI → 1955 Pemilu & KAA → 1959 Dekrit. Dengan garis waktu, pilihan tanggal yang tertukar langsung ketahuan.',
+ 'twk-hukum':'Tata urutan disingkat "U-T-U-P-P-P-P": UUD, Tap MPR, UU/Perppu, PP, Perpres, Perda Prov, Perda Kab/Kota. Nomor UU yang sering keluar: 12/2011 (peraturan), 20/2023 (ASN), 25/2009 (pelayanan publik), 23/2014 (pemda), 23/2019 (bela negara), 24/2009 (bendera-bahasa-lambang-lagu).',
+ 'twk-integritas':'Pilih jawaban yang (1) menolak pelanggaran tanpa kompromi, (2) tetap sesuai prosedur, dan (3) melapor lewat jalur resmi. Coret langsung pilihan yang mengandung "sekali saja", "asalkan", "tidak ketahuan", "dibagi", atau "menyebarkan ke media sosial".',
+ 'twk-belanegara':'Bela negara bagi ASN = kerja profesional dan jujur, bukan angkat senjata. Pasal kunci: 27(3) bela negara, 30(1) hankam. Lima nilai: Cinta tanah air, Sadar berbangsa, Setia Pancasila, Rela berkorban, Kemampuan awal bela negara.',
+ 'twk-bahasa':'Kata depan di/ke/dari + tempat → pisah; awalan di- + kerja → sambung. Kata baku sering keluar: praktik, apotek, sistem, kualitas, nasihat, analisis, izin, risiko, sekadar, jadwal, karier, atlet, hakikat. "Pun" dipisah kecuali walaupun, meskipun, adapun, bagaimanapun, sekalipun (=walaupun).',
+ 'twk-asn':'BerAKHLAK = Berorientasi pelayanan, Akuntabel, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif. Cocokkan kata kunci: barang milik negara/jujur → Akuntabel; rahasia jabatan/setia → Loyal; inovasi/perubahan → Adaptif; kerja sama → Kolaboratif; menghargai perbedaan → Harmonis.',
+ 'tiu-sinonim':'Ganti kata soal dengan setiap pilihan dalam satu kalimat contoh. Pilihan yang maknanya tetap sama itulah jawabannya. Jangan terkecoh kata yang bunyinya mirip (evokasi ≠ evakuasi, kolaborasi ≠ elaborasi).',
+ 'tiu-antonim':'Cari sinonimnya dulu dalam kepala, lalu pilih lawan dari sinonim itu. Coret pilihan yang justru sinonim; biasanya ada 2–3 jebakan sinonim.',
+ 'tiu-analogi':'Buat satu kalimat hubungan, misalnya "A adalah alat yang dipakai B". Uji kalimat itu ke setiap pilihan dengan urutan yang sama. Pilihan yang urutannya terbalik langsung dicoret.',
+ 'tiu-silogisme':'Tiga pola yang paling sering: (1) Jika P maka Q; tidak Q → tidak P. (2) P atau Q; bukan P → Q. (3) "Sebagian" + "Semua" → kesimpulan "sebagian". Jika premis kedua berbunyi "tidak P" atau "Q terjadi", jawabannya hampir selalu "tidak dapat disimpulkan/belum tentu".',
+ 'tiu-analitis':'Gambar kotak atau garis, jangan menghafal di kepala. Urutan pengisian: posisi pasti (ujung, nomor tertentu) → pasangan "tepat di sebelah" → larangan. Jika macet, uji satu kemungkinan; kalau melanggar syarat, kemungkinan lainnya pasti benar.',
+ 'tiu-deret':'Urutan cek: (1) selisih tetap? (2) selisih naik teratur/kuadrat/prima? (3) rasio (×2, ×3, ×n)? (4) dua operasi bergantian? (5) deret loncat (pisahkan ganjil-genap) jika ada 7 suku atau lebih. Untuk huruf, pakai patokan E=5, J=10, O=15, T=20, Y=25.',
+ 'tiu-hitung':'Ubah persen ke pecahan: 12,5% = 1/8, 25% = 1/4, 37,5% = 3/8, 20% = 1/5. Perkalian cepat: ×5 = ×10÷2, ×25 = ×100÷4, ×99 = ×100 − 1×. Jika pilihan jawabannya berjauhan, cukup perkirakan (bulatkan) lalu pilih yang terdekat.',
+ 'tiu-perbandingan':'Cari nilai "1 bagian" dari jumlah atau selisih. Naik x% → bagi dengan (1 + x%). Diskon x% → bagi dengan (1 − x%). Persentase untung/kenaikan selalu dibagi angka awal.',
+ 'tiu-cerita':'Coba masukkan pilihan jawaban ke soal (backsolving), mulai dari pilihan tengah. Rumus kunci: waktu = jarak ÷ kecepatan; berpapasan = kecepatan dijumlah; dua pekerja = (a×b)/(a+b); orang × hari tetap; rata-rata → hitung jumlahnya dulu.',
+ 'tkp-pelayanan':'Nilai 5 hampir selalu pilihan paling panjang yang memuat tiga unsur: empati (minta maaf/ramah) + tetap sesuai aturan + memberi solusi sampai tuntas. Nilai 1: menolak, menyalahkan, menerima imbalan.',
+ 'tkp-jejaring':'Urutan nilai: menghindar/bekerja sendiri (1) → pasif menunggu (2) → bertindak minimal (3) → proaktif (4) → proaktif + menjaga hubungan berkelanjutan lewat jalur resmi (5).',
+ 'tkp-sosbud':'Nilai 5: aktif berbaur dan menghargai perbedaan, plus mengajak orang lain. Coret pilihan "menjaga jarak", "hanya dengan kelompok sendiri", atau ikut menertawakan.',
+ 'tkp-tik':'Nilai 5: mau belajar teknologi, memakainya untuk efisiensi, menjaga keamanan data, dan membantu rekan. Ada risiko keamanan? Pilih yang tidak mengklik/tidak membagikan + melapor ke tim TI + mengingatkan orang lain.',
+ 'tkp-profesional':'Nilai 5: bertanggung jawab, jujur, komunikatif dengan atasan, dan memperbaiki agar tidak terulang. Coret pilihan mengeluh, menolak tugas, melempar ke rekan, atau menutupi kesalahan.',
+ 'tkp-radikal':'Pola nilai hampir selalu: ikut menyebarkan (1) → diam/abaikan (2) → menolak/menghapus untuk diri sendiri (3) → mengingatkan (4) → tidak menyebarkan + mengingatkan/dialog + melapor lewat jalur resmi (5).'
+};
+
+/* strategi umum mengerjakan SKD */
+const STRATEGI=[
+ ['Bagi waktu 100 menit','Rata-rata hanya 54 detik per soal. Patokan: TWK 30 soal ± 20 menit, TIU 35 soal ± 45 menit, TKP 45 soal ± 25 menit, sisa 10 menit untuk soal yang ditandai ragu.'],
+ ['Urutan mengerjakan','Banyak peserta mengerjakan TKP dulu (cepat dan pasti dapat poin), lalu TWK, dan TIU terakhir. Yang penting: jangan sampai ada soal kosong, karena salah dan kosong sama-sama 0 poin.'],
+ ['Aturan 1 menit','Jika soal belum ketemu jawabannya dalam ± 1 menit, isi tebakan terbaik, tandai ragu, lalu lanjut. Kembali ke soal itu di akhir. Soal hitungan panjang jangan dikerjakan di awal.'],
+ ['Eliminasi dulu','Coret pilihan yang jelas salah. Dari 5 pilihan tersisa 2, peluang benar naik dari 20% ke 50%.'],
+ ['Kerjakan dari pilihan','Untuk soal cerita dan persamaan, masukkan pilihan jawaban ke soal (mulai dari pilihan tengah). Sering lebih cepat daripada menyusun rumus.'],
+ ['Kejar ambang batas TIU','TIU paling sering membuat peserta gugur. Target aman: minimal 17 soal benar (85 poin) dari 35. Kuasai dulu deret, silogisme, dan hitungan dasar karena polanya berulang.'],
+ ['TKP: baca semua pilihan','Pilihan nilai 5 biasanya paling lengkap: empati + taat aturan + solusi + tindak lanjut. Jika dua pilihan mirip, pilih yang lebih proaktif dan melibatkan jalur resmi.'],
+ ['Latihan berwaktu','Kerjakan simulasi penuh 100 menit minimal seminggu sekali, lalu ulangi soal yang salah lewat menu "Soal yang perlu diulang".']
+];
+
 /* ratakan ke satu bank soal, lalu acak urutan pilihan (tetap sama tiap dibuka) agar letak kunci tidak berpola */
 const Q=[];
 function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -1452,7 +1631,7 @@ function renderHome(){
     <header class="masthead">
       <span class="formcode">BANK SOAL ${Q.length} · ${PACKS.length} PAKET · TWK · TIU · TKP</span>
       <h1>Simulasi SKD CPNS</h1>
-      <p>Latihan Seleksi Kompetensi Dasar dengan sistem nilai seperti CAT BKN. Setiap jawaban dibahas: kenapa pilihanmu keliru, kenapa kunci benar, dan materi yang perlu diulang. Untuk TKP, kamu bisa melihat nilai 1–5 setiap pilihan.</p>
+      <p>Latihan Seleksi Kompetensi Dasar dengan sistem nilai seperti CAT BKN. Setiap jawaban dibahas: kenapa pilihanmu keliru, kenapa kunci benar, cara pengerjaan langkah demi langkah, dan cara cepatnya. Untuk TKP, kamu bisa melihat nilai 1–5 setiap pilihan.</p>
     </header>
     ${runHTML}
     <section class="panel">
@@ -1493,6 +1672,14 @@ function renderHome(){
         <div class="keys"><span><kbd>A</kbd>–<kbd>E</kbd> pilih jawaban</span><span><kbd>←</kbd><kbd>→</kbd> pindah soal</span></div>
       </section>
     </div>
+    <section class="panel">
+      <span class="label">Strategi mengerjakan SKD</span>
+      <h2>Cara cepat dan pembagian waktu</h2>
+      <div class="strat">${STRATEGI.map(([a,b])=>`<div><b>${a}</b><p>${b}</p></div>`).join('')}</div>
+      <details class="others"><summary>Cara cepat per materi (${Object.keys(CEPAT).length} materi)</summary>
+        <div class="cepat-list" style="margin-top:8px">${ORDER.map(S=>`<span class="label" style="margin-top:8px">${S} · ${SEC[S].name}</span>`+Object.keys(CEPAT).filter(k=>k.startsWith(S.toLowerCase()+'-')).map(k=>`<details><summary>${TIPS[k][0]}</summary><p>${CEPAT[k]}</p></details>`).join('')).join('')}</div>
+      </details>
+    </section>
     <section class="panel">
       <span class="label">Format SKD CPNS asli</span>
       <div style="overflow-x:auto"><table class="fmt">
@@ -1546,6 +1733,11 @@ function feedbackHTML(q,my){
     }
     h+=`</div>`;
   }
+  const c=CARA[q.id];
+  if(c)h+=`<div class="steps"><span class="label">Cara pengerjaan</span><ol>${c[0].map(x=>`<li>${x}</li>`).join('')}</ol></div>`;
+  const f=(c&&c[1])||CEPAT[q.t];
+  if(f)h+=`<div class="fast"><span class="label">Cara cepat${c&&c[1]?'':' · '+(tip?tip[0]:'')}</span><p>${f}</p></div>`;
+  if(c&&c[1]&&CEPAT[q.t])h+=`<details class="others"><summary>Trik umum ${tip?tip[0].toLowerCase():''}</summary><p style="margin:6px 0 0;font-size:14px">${CEPAT[q.t]}</p></details>`;
   if(tip)h+=`<div class="tip"><span class="label">Materi · ${tip[0]}</span><p>${tip[1]}</p></div>`;
   return h;
 }
@@ -1677,7 +1869,7 @@ function renderResult(r){
       <button class="btn" id="home">Beranda</button>
     </div>
     ${topics.length?`<section class="panel"><span class="label">Materi yang perlu dipelajari</span>
-      <div class="topics">${topics.map(([t,c])=>`<details class="topic"><summary><span>${TIPS[t][0]}</span><span class="mono cnt">${c} soal</span></summary><p>${TIPS[t][1]}</p></details>`).join('')}</div></section>`:''}
+      <div class="topics">${topics.map(([t,c])=>`<details class="topic"><summary><span>${TIPS[t][0]}</span><span class="mono cnt">${c} soal</span></summary><p>${TIPS[t][1]}</p>${CEPAT[t]?`<p><b>Cara cepat:</b> ${CEPAT[t]}</p>`:''}</details>`).join('')}</div></section>`:''}
     <section class="review">
       <div class="row" style="justify-content:space-between"><span class="label">Pembahasan</span>
         <div class="chips sm"><button class="chip ${revFilter==='wrong'?'on':''}" data-f="wrong">Belum maksimal (${notReview.length})</button><button class="chip ${revFilter==='all'?'on':''}" data-f="all">Semua (${st.ids.length})</button></div></div>
